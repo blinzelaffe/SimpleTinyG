@@ -31,6 +31,7 @@
 #include "json_parser.h"
 #include "text_parser.h"
 #include "canonical_machine.h"
+#include "planner.h"
 #include "report.h"
 #include "util.h"
 #include "xio.h"					// for char definitions
@@ -49,6 +50,8 @@ static stat_t _json_parser_kernal(char_t *str);
 //static stat_t _get_nv_pair_strict(nvObj_t *nv, char_t **pstr, int8_t *depth);
 static stat_t _get_nv_pair_relaxed(nvObj_t *nv, char_t **pstr, int8_t *depth);
 static stat_t _normalize_json_string(char_t *str, uint16_t size);
+static stat_t _footer_style_1(nvObj_t *nv, stat_t status);
+static stat_t _footer_style_2(nvObj_t *nv, stat_t status);
 
 /****************************************************************************
  * json_parser() - exposed part of JSON parser
@@ -613,27 +616,59 @@ void json_print_response(uint8_t status)
 	}
 
 	// Footer processing
+	if (js.json_footer_style == 1) {
+		if (_footer_style_1(nv, status) != STAT_OK) return;
+	} else {
+		if (_footer_style_2(nv, status) != STAT_OK) return;
+	}
+	fprintf(stderr, "%s", cs.out_buf);
+}
+
+static stat_t _footer_style_2(nvObj_t *nv, stat_t status)
+{
 	while(nv->valuetype != TYPE_EMPTY) {					// find a free nvObj at end of the list...
 		if ((nv = nv->nx) == NULL) {						//...or hit the NULL and return w/o a footer
 			json_serialize(nv_header, cs.out_buf, sizeof(cs.out_buf));
-			return;
+			return (STAT_ERROR);
 		}
 	}
 	char_t footer_string[NV_FOOTER_LEN];
-	sprintf((char *)footer_string, "%d,%d,%d,0", FOOTER_REVISION, status, cs.linelen);
+	sprintf((char *)footer_string, "%d,%d,%d", 2, status, mp_get_planner_buffers_available());
+
+	nv_copy_string(nv, footer_string);						// link string to nv object
+	nv->depth = 0;											// footer 'f' is a peer to response 'r' (hard wired to 0)
+	nv->valuetype = TYPE_ARRAY;
+	strcpy(nv->token, "f");									// terminate the list
+	nv->nx = NULL;
+
+	int16_t strcount = json_serialize(nv_header, cs.out_buf, sizeof(cs.out_buf));// make JSON string w/o checksum
+	if (strcount < 0) { return(STAT_ERROR);}									 // encountered an overrun during serialization
+	return (STAT_OK);
+}
+
+static stat_t _footer_style_1(nvObj_t *nv, stat_t status)
+{
+	while(nv->valuetype != TYPE_EMPTY) {					// find a free nvObj at end of the list...
+		if ((nv = nv->nx) == NULL) {						//...or hit the NULL and return w/o a footer
+			json_serialize(nv_header, cs.out_buf, sizeof(cs.out_buf));
+			return (STAT_ERROR);
+		}
+	}
+	char_t footer_string[NV_FOOTER_LEN];
+	sprintf((char *)footer_string, "%d,%d,%d,0", 1, status, cs.linelen);
 	cs.linelen = 0;											// reset linelen so it's only reported once
 
 	nv_copy_string(nv, footer_string);						// link string to nv object
-//	nv->depth = 0;											// footer 'f' is a peer to response 'r' (hard wired to 0)
-	nv->depth = js.json_footer_depth;						// 0=footer is peer to response 'r', 1=child of response 'r'
+	nv->depth = 0;											// footer 'f' is a peer to response 'r' (hard wired to 0)
+//	nv->depth = js.json_footer_depth;						// 0=footer is peer to response 'r', 1=child of response 'r'
 	nv->valuetype = TYPE_ARRAY;
 	strcpy(nv->token, "f");									// terminate the list
 	nv->nx = NULL;
 
 	// do all this to avoid having to serialize it twice
 	int16_t strcount = json_serialize(nv_header, cs.out_buf, sizeof(cs.out_buf));// make JSON string w/o checksum
-	if (strcount < 0) { return;}							// encountered an overrun during serialization
-	if (strcount > OUTPUT_BUFFER_LEN - MAX_TAIL_LEN) { return;}	// would overrun during checksum generation
+	if (strcount < 0) { return(STAT_ERROR);}									 // encountered an overrun during serialization
+	if (strcount > OUTPUT_BUFFER_LEN - MAX_TAIL_LEN) { return(STAT_ERROR);}		 // would overrun during checksum generation
 	int16_t strcount2 = strcount;
 	char tail[MAX_TAIL_LEN];
 
@@ -642,8 +677,9 @@ void json_print_response(uint8_t status)
 
 	while (cs.out_buf[strcount2] != ',') { strcount2--; }// find start of checksum
 	sprintf((char *)cs.out_buf + strcount2 + 1, "%d%s", compute_checksum(cs.out_buf, strcount2), tail);
-	fprintf(stderr, "%s", cs.out_buf);
+	return (STAT_OK);
 }
+
 
 /***********************************************************************************
  * CONFIGURATION AND INTERFACE FUNCTIONS
@@ -685,19 +721,19 @@ stat_t json_set_jv(nvObj_t *nv)
 /*
  * js_print_ej()
  * js_print_jv()
- * js_print_j2()
- * js_print_fs()
+ * js_print_js()
+ * js_print_jf()
  */
 
 static const char fmt_ej[] PROGMEM = "[ej]  enable json mode%13d [0=text,1=JSON]\n";
 static const char fmt_jv[] PROGMEM = "[jv]  json verbosity%15d [0=silent,1=footer,2=messages,3=configs,4=linenum,5=verbose]\n";
 static const char fmt_js[] PROGMEM = "[js]  json serialize style%9d [0=relaxed,1=strict]\n";
-static const char fmt_fs[] PROGMEM = "[fs]  footer style%17d [0=new,1=old]\n";
+static const char fmt_jf[] PROGMEM = "[jf]  json footer style%12d [1=checksum,1=qr style]\n";
 
 void js_print_ej(nvObj_t *nv) { text_print_ui8(nv, fmt_ej);}
 void js_print_jv(nvObj_t *nv) { text_print_ui8(nv, fmt_jv);}
 void js_print_js(nvObj_t *nv) { text_print_ui8(nv, fmt_js);}
-void js_print_fs(nvObj_t *nv) { text_print_ui8(nv, fmt_fs);}
+void js_print_jf(nvObj_t *nv) { text_print_ui8(nv, fmt_jf);}
 
 #endif // __TEXT_MODE
 

@@ -45,7 +45,7 @@
 /****** REVISIONS ******/
 
 #ifndef TINYG_FIRMWARE_BUILD
-#define TINYG_FIRMWARE_BUILD   		438.01	// testing inches mode issues
+#define TINYG_FIRMWARE_BUILD   		439.01	// json footer style experiment
 
 #endif
 #define TINYG_FIRMWARE_VERSION		0.97					// firmware major version

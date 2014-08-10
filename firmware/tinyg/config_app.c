@@ -460,6 +460,7 @@ const cfgItem_t cfgArray[] PROGMEM = {
 	{ "sys","ej",  _fipn, 0, js_print_ej,  get_ui8,   set_01,     (float *)&cfg.comm_mode,			COMM_MODE },
 	{ "sys","jv",  _fipn, 0, js_print_jv,  get_ui8,   json_set_jv,(float *)&js.json_verbosity,		JSON_VERBOSITY },
 	{ "sys","js",  _fipn, 0, js_print_js,  get_ui8,   set_01,     (float *)&js.json_syntax, 		JSON_SYNTAX_MODE },
+	{ "sys","jf",  _fipn, 0, js_print_jf,  get_ui8,   set_ui8,    (float *)&js.json_footer_style, 	JSON_FOOTER_STYLE },
 	{ "sys","tv",  _fipn, 0, tx_print_tv,  get_ui8,   set_01,     (float *)&txt.text_verbosity,		TEXT_VERBOSITY },
 	{ "sys","qv",  _fipn, 0, qr_print_qv,  get_ui8,   set_0123,   (float *)&qr.queue_report_verbosity,QUEUE_REPORT_VERBOSITY },
 	{ "sys","sv",  _fipn, 0, sr_print_sv,  get_ui8,   set_012,    (float *)&sr.status_report_verbosity,STATUS_REPORT_VERBOSITY },
@@ -520,7 +521,7 @@ const cfgItem_t cfgArray[] PROGMEM = {
 
 	// Diagnostic parameters
 #ifdef __DIAGNOSTIC_PARAMETERS
-	{ "_te","_tex",_f0, 2, tx_print_flt, get_flt, set_nul,(float *)&mr.target[AXIS_X], 0 },			// X target endpoint
+	{ "_te","_tex",_f0, 2, tx_print_flt, get_flt, set_nul,(float *)&mr.target[AXIS_X], 0 },				// X target endpoint
 	{ "_te","_tey",_f0, 2, tx_print_flt, get_flt, set_nul,(float *)&mr.target[AXIS_Y], 0 },
 	{ "_te","_tez",_f0, 2, tx_print_flt, get_flt, set_nul,(float *)&mr.target[AXIS_Z], 0 },
 	{ "_te","_tea",_f0, 2, tx_print_flt, get_flt, set_nul,(float *)&mr.target[AXIS_A], 0 },
@@ -538,7 +539,7 @@ const cfgItem_t cfgArray[] PROGMEM = {
 	{ "_ts","_ts1",_f0, 2, tx_print_flt, get_flt, set_nul,(float *)&mr.target_steps[MOTOR_1], 0 },		// Motor 1 target steps
 	{ "_ps","_ps1",_f0, 2, tx_print_flt, get_flt, set_nul,(float *)&mr.position_steps[MOTOR_1], 0 },	// Motor 1 position steps
 	{ "_cs","_cs1",_f0, 2, tx_print_flt, get_flt, set_nul,(float *)&mr.commanded_steps[MOTOR_1], 0 },	// Motor 1 commanded steps (delayed steps)
-	{ "_es","_es1",_f0, 2, tx_print_flt, get_flt, set_nul,(float *)&mr.encoder_steps[MOTOR_1], 0 },	// Motor 1 encoder steps
+	{ "_es","_es1",_f0, 2, tx_print_flt, get_flt, set_nul,(float *)&mr.encoder_steps[MOTOR_1], 0 },		// Motor 1 encoder steps
 	{ "_xs","_xs1",_f0, 2, tx_print_flt, get_flt, set_nul,(float *)&st_pre.mot[MOTOR_1].corrected_steps, 0 }, // Motor 1 correction steps applied
 	{ "_fe","_fe1",_f0, 2, tx_print_flt, get_flt, set_nul,(float *)&mr.following_error[MOTOR_1], 0 },	// Motor 1 following error in steps
 #endif

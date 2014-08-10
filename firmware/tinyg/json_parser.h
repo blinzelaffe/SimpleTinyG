@@ -66,7 +66,7 @@ typedef struct jsSingleton {
 	/*** config values (PUBLIC) ***/
 	uint8_t json_verbosity;			// see enum in this file for settings
 	uint8_t json_footer_depth;		// 0=footer is peer to response 'r', 1=child of response 'r'
-//	uint8_t json_footer_style;		// select footer style
+	uint8_t json_footer_style;		// select footer style, 1 or 2
 	uint8_t json_syntax;			// 0=relaxed syntax, 1=strict syntax
 
 	uint8_t echo_json_footer;		// flags for JSON responses serialization
@@ -98,14 +98,14 @@ stat_t json_set_jv(nvObj_t *nv);
 	void js_print_ej(nvObj_t *nv);
 	void js_print_jv(nvObj_t *nv);
 	void js_print_js(nvObj_t *nv);
-	void js_print_fs(nvObj_t *nv);
+	void js_print_jf(nvObj_t *nv);
 
 #else
 
 	#define js_print_ej tx_print_stub
 	#define js_print_jv tx_print_stub
 	#define js_print_js tx_print_stub
-	#define js_print_fs tx_print_stub
+	#define js_print_jf tx_print_stub
 
 #endif // __TEXT_MODE
 
