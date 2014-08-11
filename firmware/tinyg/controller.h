@@ -75,6 +75,7 @@ typedef struct controllerSingleton {	// main TG controller struct
 	char_t in_buf[INPUT_BUFFER_LEN];	// primary input buffer
 	char_t out_buf[OUTPUT_BUFFER_LEN];	// output buffer
 	char_t saved_buf[SAVED_BUFFER_LEN];	// save the input buffer
+
 	magic_t magic_end;
 } controller_t;
 

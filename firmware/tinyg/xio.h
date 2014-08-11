@@ -91,9 +91,49 @@ enum xioDevNum_t {		// TYPE:	DEVICE:
 #define XIO_DEV_FILE_COUNT		1				// # of FILE devices
 #define XIO_DEV_FILE_OFFSET		(XIO_DEV_USART_COUNT + XIO_DEV_SPI_COUNT) // index into FILES
 
+#define READLINE_SLOTS	8						// number of readline() input buffers (slots)
+#define READLINE_SLOT_SIZE 128					// input buffer length
+
+enum cmSlotState {				// manages startup lines
+	SLOT_IS_FREE = 0,			// slot is available for writing
+	SLOT_IS_CTRL = 1,			// slot is determined to be a control line (same as DEV_IS_CTRL)
+	SLOT_IS_DATA = 2,			// slot is determined to be a data line (same as DEV_IS_DATA)
+	SLOT_IS_PARTIAL				// slot is partially loaded
+};
+
 // Fast accessors
 #define USB ds[XIO_DEV_USB]
 #define USBu us[XIO_DEV_USB - XIO_DEV_USART_OFFSET]
+
+
+//*** Device flags ***
+typedef uint16_t devflags_t;
+
+// device capabilities flags
+#define DEV_CAN_BE_CTRL		(0x0001)		// device can be a control channel
+#define DEV_CAN_BE_DATA		(0x0002)		// device can be a data channel
+#define DEV_CAN_READ		(0x0010)
+#define DEV_CAN_WRITE		(0x0020)
+
+// Device state flags
+// channel state
+#define DEV_IS_CTRL			(0x0001)		// device is set as a control channel
+#define DEV_IS_DATA			(0x0002)		// device is set as a data channel
+#define DEV_IS_PRIMARY		(0x0004)		// device is the primary control channel
+
+// device connection state
+#define DEV_IS_DISCONNECTED	(0x0010)		// device just disconnected (transient state)
+#define DEV_IS_CONNECTED	(0x0020)		// device is connected (e.g. USB)
+#define DEV_IS_READY		(0x0040)		// device is ready for use
+#define DEV_IS_ACTIVE		(0x0080)		// device is active
+
+// device exception flags
+#define DEV_THROW_EOF		(0x0100)		// end of file encountered
+
+// device specials
+#define DEV_IS_BOTH			(DEV_IS_CTRL | DEV_IS_DATA)
+#define DEV_FLAGS_CLEAR		(0x0000)		// Apply as flags = DEV_FLAGS_CLEAR;
+
 
 /******************************************************************************
  * Device structures
