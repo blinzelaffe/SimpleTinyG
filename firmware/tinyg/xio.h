@@ -91,8 +91,8 @@ enum xioDevNum_t {		// TYPE:	DEVICE:
 #define XIO_DEV_FILE_COUNT		1				// # of FILE devices
 #define XIO_DEV_FILE_OFFSET		(XIO_DEV_USART_COUNT + XIO_DEV_SPI_COUNT) // index into FILES
 
-#define READLINE_SLOTS	3						// number of readline() input buffers (slots)
-#define READLINE_SLOT_SIZE 40					// input buffer length
+#define READLINE_SLOTS	4						// number of readline() input buffers (slots)
+#define READLINE_SLOT_SIZE 80					// input buffer length
 
 enum cmSlotState {				// manages startup lines
 	SLOT_IS_FREE = 0,			// slot is available for writing

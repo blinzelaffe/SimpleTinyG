@@ -45,7 +45,7 @@
 /****** REVISIONS ******/
 
 #ifndef TINYG_FIRMWARE_BUILD
-#define TINYG_FIRMWARE_BUILD   		440.03	// readline sliding window experiment - works sort of
+#define TINYG_FIRMWARE_BUILD   		440.04	// readline sliding window experiment - cleaning up readline()
 
 #endif
 #define TINYG_FIRMWARE_VERSION		0.97					// firmware major version

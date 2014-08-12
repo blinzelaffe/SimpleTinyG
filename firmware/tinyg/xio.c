@@ -390,95 +390,97 @@ void xio_set_stderr(const uint8_t dev)
  *	 char_t * Returns a pointer to the buffer containing the line, or NULL (*0) if no text
  *
  ***** NOTE: Only Single Device Read is currrently implemented ****
- ***** NOTE: This is all rather brute force for now. If it tests out well we can optimize ****
+ ***** NOTE: This function assumes synchronous operation. That is, the readline() caller (controller)
+ *			 will completely use the returned line before calling readline() again.
+ ***** NOTE: This is rather brute force for now. If it tests out it can be optimized ****
  */
+
+// HELPERS
+
+int8_t _find_next_slot(int8_t s, uint8_t status)  // returns index of first slot with a given status
+{
+	for (; s<READLINE_SLOTS; s++) {
+		if (xio.slot[s].status == status) {
+			return (s);
+		}
+	}
+	return (-1);
+}
+
+int8_t _find_lowest_seqnum(uint8_t status)	// returns the slot with the lowest non-zero sequence number for a given status
+{
+	int8_t slot = -1;
+	uint32_t seqnum = MAX_ULONG;
+
+	for (uint8_t s=0; s<READLINE_SLOTS; s++) {
+		if ((xio.slot[s].seqnum != 0) && (xio.slot[s].status == status) && (xio.slot[s].seqnum < seqnum)) {
+			seqnum = xio.slot[s].seqnum;
+			slot = s;
+		}
+	}
+	return (slot);
+}
+
+void _mark_slot_type(int8_t s)	// reads the contents and marks the slot as CTRL or DATA
+{
+	if (strchr("{$?!~%Hh", xio.slot[s].buf[0]) != NULL) {	// a match indicates control
+		xio.slot[s].status = SLOT_IS_CTRL;
+	} else {
+		xio.slot[s].status = SLOT_IS_DATA;
+	}
+}
 
 char_t *readline(devflags_t *flags, uint16_t *size)
 {
-	uint8_t s=0;						// slot index
+	int8_t s=0;							// slot index
 	stat_t status;						// returned status code
 	char_t ctrls[] = { "{$?!~%Hh" };	// scan for control lines
-
 	*size = 0;							// pre-set these
 	*flags = 0;
 
-	// Find a partially loaded slot and start there
-	for (s=0; s<READLINE_SLOTS; s++) {
-		if (xio.slot[s].status == SLOT_IS_PARTIAL) {
-			// xio_gets_usart() will accept completed and overflowed lines
-			// Overflowed lines are truncated and terminated
-//			status = xio_gets_usart(&ds[XIO_DEV_USB], xio.slot[s].buf, READLINE_SLOT_SIZE);
-			status = xio_gets(XIO_DEV_USB, xio.slot[s].buf, READLINE_SLOT_SIZE);
-			if (status == STAT_EAGAIN) {
-				return ((char_t *)NULL);
-			}
-			xio.slot[s].seqnum = ++xio.next_seqnum;		// increment and mark sequence number
-			xio.slots_free--;
-			if (strchr(ctrls, xio.slot[s].buf[0]) != NULL) {
-				xio.slot[s].status = SLOT_IS_CTRL;		// change state to control line
-			} else {
-				xio.slot[s].status = SLOT_IS_DATA;		// change state to data line
-			}
+	// Start with a partially loaded slot if one exists
+	// xio_gets_usart() will accept completed and overflowed lines, which are then truncated and terminated
+//		status = xio_gets(XIO_DEV_USB, xio.slot[s].buf, READLINE_SLOT_SIZE);
+
+	if ((s = _find_next_slot(0, SLOT_IS_PARTIAL)) != -1) {
+		status = xio_gets_usart(&ds[XIO_DEV_USB], xio.slot[s].buf, READLINE_SLOT_SIZE);
+		if (status == STAT_EAGAIN) {
+			return ((char_t *)NULL);
 		}
+		_mark_slot_type(s);							// label as ctrl or data
+		xio.slot[s].seqnum = ++xio.next_seqnum;		// mark w/sequence number only after it's filled
 	}
 
 	// Now fill free slots until you run out of slots or characters
-	for (s=0; s<READLINE_SLOTS; s++) {
-		if (xio.slot[s].status == SLOT_IS_FREE) {
-//			if ((status = xio_gets_usart(&ds[XIO_DEV_USB], xio.slot[s].buf, READLINE_SLOT_SIZE)) != STAT_OK) {
-			status = xio_gets(XIO_DEV_USB, xio.slot[s].buf, READLINE_SLOT_SIZE);
-			if (status == STAT_EAGAIN) {
-				xio.slot[s].status = SLOT_IS_PARTIAL;	// break out on first partial line
-				break;
-			}
-			if (xio.slot[s].buf[0] == NUL) {			// discard blank lines
-				xio.slot[s].seqnum = 0;
-				xio.slot[s].status = SLOT_IS_FREE;
-				continue;
-			}
-			// if it gets here it means you have a complete buffer
-			xio.slots_free--;
-			xio.slot[s].seqnum = ++xio.next_seqnum;		// increment and mark sequence number
-			if (strchr(ctrls, xio.slot[s].buf[0]) != NULL) {
-				xio.slot[s].status = SLOT_IS_CTRL;		// change state to control line
-			} else {
-				xio.slot[s].status = SLOT_IS_DATA;		// change state to data line
-			}
+	while ((s = _find_next_slot(s, SLOT_IS_FREE)) != -1) {
+		status = xio_gets_usart(&ds[XIO_DEV_USB], xio.slot[s].buf, READLINE_SLOT_SIZE);
+		if (status == STAT_EAGAIN) {
+			xio.slot[s].status = SLOT_IS_PARTIAL;	// break out on first partial line
+			break;
 		}
-	}
-	if (s == READLINE_SLOTS) {							// no available slots. bail.
-		return ((char_t *)NULL);
-	}
-
-	int8_t ctrl_slot = -1;								// ctrl line to return
-	int8_t data_slot = -1;								// data line to return
-	uint32_t ctrl_min = MAX_ULONG;						// ctrl min sequence number
-	uint32_t data_min = MAX_ULONG;						// data min sequence number
-
-	// Figure out what to return - scan for lowest non-zero sequence number
-	for (s=0; s<READLINE_SLOTS; s++) {					// scan for slots
-		if (xio.slot[s].seqnum != 0) {
-			if ((xio.slot[s].status == SLOT_IS_CTRL) && (xio.slot[s].seqnum < ctrl_min)) {
-				ctrl_slot = s;
-			} else
-			if ((xio.slot[s].status == SLOT_IS_DATA) && (xio.slot[s].seqnum < data_min)) {
-				data_slot = s;
-			}
+		// you got a completed line
+		if (xio.slot[s].buf[0] == NUL) {			// discard blank lines
+			xio.slot[s].seqnum = 0;
+			xio.slot[s].status = SLOT_IS_FREE;
+			continue;
 		}
+		xio.slots_free--;
+		_mark_slot_type(s);							// label as ctrl or data
+		xio.slot[s].seqnum = ++xio.next_seqnum;		// increment and mark sequence number
 	}
-	if (ctrl_slot >= 0) {
+	if ((s = _find_lowest_seqnum(SLOT_IS_CTRL)) != -1) {
+		xio.slot[s].seqnum = 0;						// reset the slot sequence number. We don't care anymore
+		xio.slot[s].status = SLOT_IS_FREE;
+		xio.slots_free++;
 		*flags = DEV_IS_CTRL;
-		xio.slot[ctrl_slot].seqnum = 0;					// reset the slot. We don't care anymore
-		xio.slot[ctrl_slot].status = SLOT_IS_FREE;
-		xio.slots_free++;
-		return (xio.slot[ctrl_slot].buf);
+		return (xio.slot[s].buf);
 	}
-	if (data_slot >= 0) {
-		*flags = DEV_IS_DATA;
-		xio.slot[data_slot].seqnum = 0;					// reset the slot. We don't care anymore
-		xio.slot[data_slot].status = SLOT_IS_FREE;
+	if ((s = _find_lowest_seqnum(SLOT_IS_DATA)) != -1) {
+		xio.slot[s].seqnum = 0;
+		xio.slot[s].status = SLOT_IS_FREE;
 		xio.slots_free++;
-		return (xio.slot[data_slot].buf);
+		*flags = DEV_IS_DATA;
+		return (xio.slot[s].buf);
 	}
 	return ((char_t *)NULL);
 }
