@@ -98,7 +98,7 @@ void controller_init(uint8_t std_in, uint8_t std_out, uint8_t std_err)
 #endif
 
 #ifdef __ARM
-	cs.state = CONTROLLER_NOT_CONNECTED;			// find USB next
+//	cs.state = CONTROLLER_NOT_CONNECTED;			// find USB next
 	IndicatorLed.setFrequency(100000);
 #endif
 }
@@ -200,6 +200,13 @@ static void _controller_HSM()
 static stat_t _command_dispatch()
 {
 #ifdef __AVR
+
+	devflags_t flags;
+
+	if ((cs.bufp = readline(&flags, &cs.linelen)) == NULL) {
+		return (STAT_OK);									// nothing to process yet
+	}
+/*
 	stat_t status;
 
 	// read input line or return if not a completed line
@@ -220,6 +227,7 @@ static stat_t _command_dispatch()
 		}
 		return (status);								// Note: STAT_EAGAIN, errors, etc. will drop through
 	}
+*/
 #endif // __AVR
 #ifdef __ARM
 	// detect USB connection and transition to disconnected state if it disconnected

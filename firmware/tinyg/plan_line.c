@@ -179,29 +179,28 @@ stat_t mp_aline(GCodeState_t *gm_in)
 	//  jerk J is:
 	//
 	//		T = 2*sqrt((S-E)/J[n])
-	//			Since E is always zero in this calculation, we can simplify:
+	//
+	//	Since E is always zero in this calculation, we can simplify:
 	//		T = 2*sqrt(S/J[n])
 	//
 	//	The math for distance-to-decelerate l from speed S to speed E with constant
 	//  jerk J is:
 	//
 	//		l = (S+E)*sqrt((S-E)/J)
-	//			Since E is always zero in this calculation, we can simplify:
+	//
+	//	Since E is always zero in this calculation, we can simplify:
 	//		l = S*sqrt(S/J)
 	//
-	//  The final value we want is to know which one is *longest*, compared to the
-	//  others, so we don't need the actual value. This means that the scale of
-	//  the value doesn't matter, so for T we can remove the "2 *" and For L we
-	//  can remove the "S*". This leaves both to be simply "sqrt(S/J)". Since we
-	//  don't need the scale, it doesn't matter what speed we're coming from, so S
-	//  can be replaced with 1.
+	//  The final value we want is to know which one is *longest*, compared to the others,
+	//	so we don't need the actual value. This means that the scale of the value doesn't
+	//	matter, so for T we can remove the "2 *" and For L we can remove the "S*".
+	//	This leaves both to be simply "sqrt(S/J)". Since we don't need the scale,
+	//	it doesn't matter what speed we're coming from, so S can be replaced with 1.
 	//
-	//  However, we *do* need to compensate for the fact that each axis
-	//	contributes differently to the move, so we will scale each contribution
-	//  C[n] by the proportion of the axis movement length D[n] to the total length
-	//  of the move L. Using theat, we construct the following:
-	//
-	// With these definitions:
+	//  However, we *do* need to compensate for the fact that each axis contributes
+	//	differently to the move, so we will scale each contribution C[n] by the
+	//	proportion of the axis movement length D[n] to the total length of the move L.
+	//	Using that, we construct the following, with these definitions:
 	//
 	//		J[n] = max_jerk for axis n
 	//		D[n] = distance traveled for this move for axis n
@@ -210,12 +209,11 @@ stat_t mp_aline(GCodeState_t *gm_in)
 	//
 	// For each axis n: C[n] = sqrt(1/J[n]) * (D[n]/L)
 	//
-	//	Keeping in mind that we only need a rank compared to the other axes, we
-	//  can further optimize the calculations::
+	//	Keeping in mind that we only need a rank compared to the other axes, we can further
+	//	optimize the calculations::
 	//
 	//	Square the expression to remove the square root:
-	//		C[n]^2 = (1/J[n]) * (D[n]/L)^2
-	//		(We don't care the C is squared, we'll use it that way.)
+	//		C[n]^2 = (1/J[n]) * (D[n]/L)^2	(We don't care the C is squared, we'll use it that way.)
 	//
 	//	Re-arranged to optimize divides for pre-calculated values, we create a value
 	//  M that we compute once:
@@ -223,8 +221,7 @@ stat_t mp_aline(GCodeState_t *gm_in)
 	//  Then we use it in the calculations for every axis:
 	//		C[n] = (1/J[n]) * D[n]^2 * M
 	//
-	//  Also note that we already have (1/J[n]) calculated for each axis, which
-	//  simplifies it further.
+	//  Also note that we already have (1/J[n]) calculated for each axis, which simplifies it further.
 	//
 	// Finally, the selected jerk term needs to be scaled by the reciprocal of the absolute value
 	// of the jerk-limit axis's unit vector term. This way when the move is finally decomposed into
@@ -254,7 +251,6 @@ stat_t mp_aline(GCodeState_t *gm_in)
 	bf->recip_jerk = 1/bf->jerk;
 	bf->cbrt_jerk = cbrt(bf->jerk);											// compute cached jerk terms used by planning
 	mm.prev_cbrt_jerk = bf->cbrt_jerk;										// used before this point next time around
-//	printf("j:%0.0f\n", bf->jerk);	//+++++
 
 	// finish up the current block variables
 	if (cm_get_path_control(MODEL) != PATH_EXACT_STOP) { 	// exact stop cases already zeroed

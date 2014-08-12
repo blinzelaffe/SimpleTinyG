@@ -97,6 +97,7 @@ typedef struct xioSingleton {
 	FILE * stderr_shadow;			// used for stack overflow / memory integrity checking
 
 	// readline sliding window
+	uint8_t slots_free;
 	uint32_t next_seqnum;
 	slot_t slot[READLINE_SLOTS];
 
@@ -116,6 +117,8 @@ void xio_init()
 //	xio_set_stderr(0);				// set a bogus value; may be overwritten with a real value
 
 	memset(&xio, 0, sizeof(xioSingleton_t));	// clear all values
+
+	xio.slots_free = READLINE_SLOTS;
 
 	// setup device types
 	xio_init_usart();
@@ -140,7 +143,11 @@ void xio_init()
  *		 not set up then it will fail in the assertions test. Need to fix this.
  */
 
-void xio_init_assertions() {}
+void xio_init_assertions()
+{
+	xio.magic_start = MAGICNUM;
+	xio.magic_end = MAGICNUM;
+}
 
 uint8_t xio_test_assertions()
 {
@@ -328,21 +335,21 @@ void xio_set_stderr(const uint8_t dev)
 /*
  * readline() - sliding window read reader
  *
- *	Reads characters from one or more input devices and attempts to assemble a completed 
- *	line ready for execution by the controller. Uses an array of input slots to implement a 
- *	sliding window protocol - i.e. buffers multiple input lines. Accepts CR or LF as line 
+ *	Reads characters from one or more input devices and attempts to assemble a completed
+ *	line ready for execution by the controller. Uses an array of input slots to implement a
+ *	sliding window protocol - i.e. buffers multiple input lines. Accepts CR or LF as line
  *	terminator. Replaces CR or LF with NUL in the returned string.
  *
- *	This function reads characters from a device (e.g. USB) into the array of input slots 
- *	and returns the next terminated buffer according to the rules below. 
+ *	This function reads characters from a device (e.g. USB) into the array of input slots
+ *	and returns the next terminated buffer according to the rules below.
  *
  *	Single Device Reads (reads from USB port only)
  *	 This case shows reading both ctrl and data from the USB device
  *	  - Step 1) Read all data:
- *		- Read from the USB's RX queue into the currently loading slot buffer. Keep reading 
- *		  and filling up slot buffers until the USB device has no more characters or there 
- *		  are no more slots to load. 
- *		- As lines are read  parse and label them as a control or data line. 
+ *		- Read from the USB's RX queue into the currently loading slot buffer. Keep reading
+ *		  and filling up slot buffers until the USB device has no more characters or there
+ *		  are no more slots to load.
+ *		- As lines are read  parse and label them as a control or data line.
  *		- Mark stored lines with an incrementing sequence number.
  *	  - Step 2) When done reading:
  *		- Return the control line with the lowest sequence number
@@ -355,7 +362,7 @@ void xio_set_stderr(const uint8_t dev)
  *		- Read from the USB's RX queue into the currently loading slot buffer. Keep reading
  *		  and filling up slot buffers until the USB device has no more characters or there
  *		  are no more slots to load.
- *		- As lines are read  parse them as a control or data line. Discard data lines, possibly 
+ *		- As lines are read  parse them as a control or data line. Discard data lines, possibly
  *		  with some kind of warning.
  *		- Mark stored lines with an incrementing sequence number.
  *	  - Step 2) When done reading:
@@ -366,12 +373,12 @@ void xio_set_stderr(const uint8_t dev)
  *
  *	ARGS:
  *
- *	 flags - Bitfield used as an input argument and as a return indicating the type of line read. 
- *			 Set to DEV_IS_BOTH on input to read from the USB device for control and data 
+ *	 flags - Bitfield used as an input argument and as a return indicating the type of line read.
+ *			 Set to DEV_IS_BOTH on input to read from the USB device for control and data
  *		     (Single Device read). Set to DEV_IS_CTRL for multiple device read. In this case
  *			 will read the current mass storage device from it's current read pointer.
  *
- *			 Returns the type of line returned - DEV_IS_CTRL, DEV_IS_DATA, or 0 (DEV_FLAGS_CLEAR) 
+ *			 Returns the type of line returned - DEV_IS_CTRL, DEV_IS_DATA, or 0 (DEV_FLAGS_CLEAR)
  *			 if no line is returned.
  *
  *   size -  Does nothing. Returns zero.
@@ -383,14 +390,14 @@ void xio_set_stderr(const uint8_t dev)
  *	 char_t * Returns a pointer to the buffer containing the line, or NULL (*0) if no text
  *
  ***** NOTE: Only Single Device Read is currrently implemented ****
- ***** NOTE: This is all rather brute force for now. If it tests out well we can optimize **** 
+ ***** NOTE: This is all rather brute force for now. If it tests out well we can optimize ****
  */
 
 char_t *readline(devflags_t *flags, uint16_t *size)
 {
 	uint8_t s=0;						// slot index
 	stat_t status;						// returned status code
-	char_t ctrls[] = { "{$?!~%Hh\n" };	// scan for control lines
+	char_t ctrls[] = { "{$?!~%Hh" };	// scan for control lines
 
 	*size = 0;							// pre-set these
 	*flags = 0;
@@ -398,11 +405,15 @@ char_t *readline(devflags_t *flags, uint16_t *size)
 	// Find a partially loaded slot and start there
 	for (s=0; s<READLINE_SLOTS; s++) {
 		if (xio.slot[s].status == SLOT_IS_PARTIAL) {
-			// xio_gets_usart() will accept completed and overflowed lines 
+			// xio_gets_usart() will accept completed and overflowed lines
 			// Overflowed lines are truncated and terminated
-			status = xio_gets_usart(&ds[XIO_DEV_USB], xio.slot[s].buf, READLINE_SLOT_SIZE);
-			if (status == STAT_EAGAIN) return ((char_t *)NULL);
+//			status = xio_gets_usart(&ds[XIO_DEV_USB], xio.slot[s].buf, READLINE_SLOT_SIZE);
+			status = xio_gets(XIO_DEV_USB, xio.slot[s].buf, READLINE_SLOT_SIZE);
+			if (status == STAT_EAGAIN) {
+				return ((char_t *)NULL);
+			}
 			xio.slot[s].seqnum = ++xio.next_seqnum;		// increment and mark sequence number
+			xio.slots_free--;
 			if (strchr(ctrls, xio.slot[s].buf[0]) != NULL) {
 				xio.slot[s].status = SLOT_IS_CTRL;		// change state to control line
 			} else {
@@ -414,12 +425,19 @@ char_t *readline(devflags_t *flags, uint16_t *size)
 	// Now fill free slots until you run out of slots or characters
 	for (s=0; s<READLINE_SLOTS; s++) {
 		if (xio.slot[s].status == SLOT_IS_FREE) {
-			if ((status = xio_gets_usart(&ds[XIO_DEV_USB], xio.slot[s].buf, READLINE_SLOT_SIZE)) != STAT_OK) {
+//			if ((status = xio_gets_usart(&ds[XIO_DEV_USB], xio.slot[s].buf, READLINE_SLOT_SIZE)) != STAT_OK) {
+			status = xio_gets(XIO_DEV_USB, xio.slot[s].buf, READLINE_SLOT_SIZE);
+			if (status == STAT_EAGAIN) {
+				xio.slot[s].status = SLOT_IS_PARTIAL;	// break out on first partial line
 				break;
 			}
 			if (xio.slot[s].buf[0] == NUL) {			// discard blank lines
-				break;
+				xio.slot[s].seqnum = 0;
+				xio.slot[s].status = SLOT_IS_FREE;
+				continue;
 			}
+			// if it gets here it means you have a complete buffer
+			xio.slots_free--;
 			xio.slot[s].seqnum = ++xio.next_seqnum;		// increment and mark sequence number
 			if (strchr(ctrls, xio.slot[s].buf[0]) != NULL) {
 				xio.slot[s].status = SLOT_IS_CTRL;		// change state to control line
@@ -428,10 +446,10 @@ char_t *readline(devflags_t *flags, uint16_t *size)
 			}
 		}
 	}
-	if (s < READLINE_SLOTS) {							// no available slots. bail.
+	if (s == READLINE_SLOTS) {							// no available slots. bail.
 		return ((char_t *)NULL);
 	}
-	
+
 	int8_t ctrl_slot = -1;								// ctrl line to return
 	int8_t data_slot = -1;								// data line to return
 	uint32_t ctrl_min = MAX_ULONG;						// ctrl min sequence number
@@ -442,7 +460,7 @@ char_t *readline(devflags_t *flags, uint16_t *size)
 		if (xio.slot[s].seqnum != 0) {
 			if ((xio.slot[s].status == SLOT_IS_CTRL) && (xio.slot[s].seqnum < ctrl_min)) {
 				ctrl_slot = s;
-			} else  
+			} else
 			if ((xio.slot[s].status == SLOT_IS_DATA) && (xio.slot[s].seqnum < data_min)) {
 				data_slot = s;
 			}
@@ -450,10 +468,16 @@ char_t *readline(devflags_t *flags, uint16_t *size)
 	}
 	if (ctrl_slot >= 0) {
 		*flags = DEV_IS_CTRL;
+		xio.slot[ctrl_slot].seqnum = 0;					// reset the slot. We don't care anymore
+		xio.slot[ctrl_slot].status = SLOT_IS_FREE;
+		xio.slots_free++;
 		return (xio.slot[ctrl_slot].buf);
 	}
 	if (data_slot >= 0) {
 		*flags = DEV_IS_DATA;
+		xio.slot[data_slot].seqnum = 0;					// reset the slot. We don't care anymore
+		xio.slot[data_slot].status = SLOT_IS_FREE;
+		xio.slots_free++;
 		return (xio.slot[data_slot].buf);
 	}
 	return ((char_t *)NULL);
