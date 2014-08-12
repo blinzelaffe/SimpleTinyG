@@ -73,6 +73,7 @@ static stat_t set_ee(nvObj_t *nv);			// enable character echo
 static stat_t set_ex(nvObj_t *nv);			// enable XON/XOFF and RTS/CTS flow control
 static stat_t set_baud(nvObj_t *nv);		// set USB baud rate
 static stat_t get_rx(nvObj_t *nv);			// get bytes in RX buffer
+static stat_t get_sws(nvObj_t *nv);			// get sliding window slots
 //static stat_t run_sx(nvObj_t *nv);		// send XOFF, XON
 
 /***********************************************************************************
@@ -180,6 +181,7 @@ const cfgItem_t cfgArray[] PROGMEM = {
 	{ "", "er",  _f0, 0, tx_print_nul, rpt_er,  set_nul,  (float *)&cs.null, 0 },	// invoke bogus exception report for testing
 	{ "", "qf",  _f0, 0, tx_print_nul, get_nul, cm_run_qf,(float *)&cs.null, 0 },	// queue flush
 	{ "", "rx",  _f0, 0, tx_print_int, get_rx,  set_nul,  (float *)&cs.null, 0 },	// space in RX buffer
+	{ "", "sws", _f0, 0, tx_print_int, get_sws, set_nul,  (float *)&cs.null, 0 },	// slots in RX slots buffer
 	{ "", "msg", _f0, 0, tx_print_str, get_nul, set_nul,  (float *)&cs.null, 0 },	// string for generic messages
 //	{ "", "clc", _f0, 0, tx_print_nul, st_clc,  st_clc,   (float *)&cs.null, 0 },	// clear diagnostic step counters
 	{ "", "clear",_f0,0, tx_print_nul, cm_clear,cm_clear, (float *)&cs.null, 0 },	// GET a clear to clear soft alarm
@@ -849,6 +851,7 @@ static stat_t _do_all(nvObj_t *nv)	// print all parameters
  * set_ex() - enable XON/XOFF or RTS/CTS flow control
  * set_baud() - set USB baud rate
  * get_rx()	- get bytes available in RX buffer
+ * get_sws()	- get slots in sliding window buffer
  *
  *	The above assume USB is the std device
  */
@@ -905,14 +908,22 @@ static stat_t get_rx(nvObj_t *nv)
 {
 #ifdef __AVR
 	nv->value = (float)xio_get_usb_rx_free();
-	nv->valuetype = TYPE_INTEGER;
-	return (STAT_OK);
-#endif
-#ifdef __ARM
+#else
 	nv->value = (float)254;				// ARM always says the serial buffer is available (max)
+#endif
 	nv->valuetype = TYPE_INTEGER;
 	return (STAT_OK);
+}
+
+static stat_t get_sws(nvObj_t *nv)
+{
+#ifdef __AVR
+	nv->value = (float)xio_get_window_slots();
+#else
+	nv->value = (float)4;				// ARM always says there are 4 slots available
 #endif
+	nv->valuetype = TYPE_INTEGER;
+	return (STAT_OK);
 }
 
 /* run_sx()	- send XOFF, XON --- test only

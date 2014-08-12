@@ -633,7 +633,7 @@ static stat_t _footer_style_2(nvObj_t *nv, stat_t status)
 		}
 	}
 	char_t footer_string[NV_FOOTER_LEN];
-	sprintf((char *)footer_string, "%d,%d,%d", 2, status, mp_get_planner_buffers_available());
+	sprintf((char *)footer_string, "%d,%d,%d", 2, status, xio_get_window_slots());
 
 	nv_copy_string(nv, footer_string);						// link string to nv object
 	nv->depth = 0;											// footer 'f' is a peer to response 'r' (hard wired to 0)

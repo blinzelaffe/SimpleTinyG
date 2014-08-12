@@ -223,6 +223,9 @@ void xio_init_assertions(void);
 uint8_t xio_test_assertions(void);
 uint8_t xio_isbusy(void);
 
+uint8_t xio_get_window_slots();
+char *readline(devflags_t *flags, uint16_t *size);	// Note: char_t aliases to char, but is not typedef'd yet
+
 void xio_reset_working_flags(xioDev_t *d);
 FILE *xio_open(const uint8_t dev, const char *addr, const flags_t flags);
 int xio_ctrl(const uint8_t dev, const flags_t flags);
