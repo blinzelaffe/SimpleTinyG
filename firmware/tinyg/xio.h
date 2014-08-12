@@ -91,7 +91,7 @@ enum xioDevNum_t {		// TYPE:	DEVICE:
 #define XIO_DEV_FILE_COUNT		1			// # of FILE devices
 #define XIO_DEV_FILE_OFFSET		(XIO_DEV_USART_COUNT + XIO_DEV_SPI_COUNT) // index into FILES
 
-#define READLINE_SLOTS	4					// number of readline() input buffers (slots)
+#define READLINE_SLOTS	12					// number of readline() input buffers (slots)
 #define READLINE_SLOT_SIZE 80				// input buffer length
 
 enum cmSlotState {							// realaine() clot states
@@ -99,7 +99,7 @@ enum cmSlotState {							// realaine() clot states
 	SLOT_IS_FILLING,						// slot is partially loaded
 	SLOT_IS_CTRL,							// slot contains a control line (same as DEV_IS_CTRL)
 	SLOT_IS_DATA,							// slot contains a data line (same as DEV_IS_DATA)
-	SLOT_IS_PROCESSING						// slot is in use by the caller	
+	SLOT_IS_PROCESSING						// slot is in use by the caller
 };
 
 // Fast accessors

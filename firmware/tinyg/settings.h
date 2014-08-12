@@ -56,7 +56,7 @@
 
 #define JSON_VERBOSITY				JV_MESSAGES				// one of: JV_SILENT, JV_FOOTER, JV_CONFIGS, JV_MESSAGES, JV_LINENUM, JV_VERBOSE
 #define JSON_SYNTAX_MODE 			JSON_SYNTAX_STRICT		// one of JSON_SYNTAX_RELAXED, JSON_SYNTAX_STRICT
-#define JSON_FOOTER_STYLE			1						// 1 = footer w/checksum, 2 = footer w/qr
+#define JSON_FOOTER_STYLE			1						// 1 = footer w/checksum, 2 = footer w/window slots
 #define JSON_FOOTER_DEPTH			0						// 0 = footer is child of R, 1 = footer is child of response object (deprecated)
 
 #define STATUS_REPORT_VERBOSITY		SR_FILTERED				// one of: SR_OFF, SR_FILTERED, SR_VERBOSE=
@@ -84,12 +84,16 @@
 
 #ifdef __DEBUG_SETTINGS
 
-#undef QUEUE_REPORT_VERBOSITY
-#define QUEUE_REPORT_VERBOSITY		QR_SINGLE				// one of: QR_OFF, QR_SINGLE, QR_TRIPLE
+#undef JSON_FOOTER_STYLE
+#define JSON_FOOTER_STYLE			2						// 1 = footer w/checksum, 2 = footer w/window slots
+
+//#undef QUEUE_REPORT_VERBOSITY
+//#define QUEUE_REPORT_VERBOSITY		QR_SINGLE				// one of: QR_OFF, QR_SINGLE, QR_TRIPLE
 
 #undef JSON_VERBOSITY
 //#define JSON_VERBOSITY				JV_SILENT			// one of: JV_SILENT, JV_FOOTER, JV_CONFIGS, JV_MESSAGES, JV_LINENUM, JV_VERBOSE
-#define JSON_VERBOSITY				JV_MESSAGES				// one of: JV_SILENT, JV_FOOTER, JV_CONFIGS, JV_MESSAGES, JV_LINENUM, JV_VERBOSE
+//#define JSON_VERBOSITY				JV_MESSAGES				// one of: JV_SILENT, JV_FOOTER, JV_CONFIGS, JV_MESSAGES, JV_LINENUM, JV_VERBOSE
+#define JSON_VERBOSITY				JV_LINENUM				// one of: JV_SILENT, JV_FOOTER, JV_CONFIGS, JV_MESSAGES, JV_LINENUM, JV_VERBOSE
 
 #undef STATUS_REPORT_DEFAULTS
 #define STATUS_REPORT_DEFAULTS "posx","posy","posz","posa","feed","vel","unit","coor","dist","frmo","stat"

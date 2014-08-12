@@ -255,8 +255,9 @@ static stat_t _command_dispatch()
 #endif // __ARM
 
 	// set up the buffers
-	cs.linelen = strlen(cs.in_buf)+1;					// linelen only tracks primary input
-	strncpy(cs.saved_buf, cs.bufp, SAVED_BUFFER_LEN-1);	// save input buffer for reporting
+//	cs.linelen = strlen(cs.in_buf)+1;					// linelen only tracks primary input
+	cs.linelen = strlen(cs.bufp)+1;						// linelen only tracks primary input
+	strncpy(cs.saved_buf, cs.bufp, INPUT_BUFFER_LEN-1);	// save input buffer for reporting
 
 	// dispatch the new text line
 	switch (toupper(*cs.bufp)) {						// first char
@@ -283,6 +284,7 @@ static stat_t _command_dispatch()
 		}
 		default: {										// anything else must be Gcode
 			if (cfg.comm_mode == JSON_MODE) {			// run it as JSON...
+//				strncpy(cs.out_buf, cs.bufp, INPUT_BUFFER_LEN -8);					// use out_buf as temp
 				strncpy(cs.out_buf, cs.bufp, INPUT_BUFFER_LEN -8);					// use out_buf as temp
 				sprintf((char *)cs.bufp,"{\"gc\":\"%s\"}\n", (char *)cs.out_buf);	// '-8' is used for JSON chars
 				json_parser(cs.bufp);
