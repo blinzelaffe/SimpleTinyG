@@ -336,7 +336,7 @@ static stat_t _populate_unfiltered_status_report()
 /*
  * _populate_filtered_status_report() - populate nvObj body with status values
  *
- *	Designed to be displayed as a JSON object; i;e; no footer or header
+ *	Designed to be displayed as a JSON object; i.e. no footer or header
  *	Returns 'true' if the report has new data, 'false' if there is nothing to report.
  *
  *	NOTE: Unlike sr_populate_unfiltered_status_report(), this function does NOT set
@@ -368,6 +368,7 @@ static uint8_t _populate_filtered_status_report()
 //			if (nv->index != sr.stat_index) {
 //				if (fp_EQ(nv->value, COMBINED_PROGRAM_STOP)) {
 					nv->valuetype = TYPE_EMPTY;
+					sr.status_report_prev[i] = 0;		// mark the value as having not been reported
 					continue;
 //				}
 //			}
@@ -377,7 +378,8 @@ static uint8_t _populate_filtered_status_report()
 			strcat(tmp, nv->token);
 			strcpy(nv->token, tmp);		//...or here.
 			sr.status_report_value[i] = nv->value;
-			if ((nv = nv->nx) == NULL) return (false); // should never be NULL unless SR length exceeds available buffer array
+			sr.status_report_prev[i] = i;				// save which elements were reported
+			if ((nv = nv->nx) == NULL) return (false);	// should never be NULL unless SR length exceeds available buffer array
 			has_data = true;
 		}
 	}

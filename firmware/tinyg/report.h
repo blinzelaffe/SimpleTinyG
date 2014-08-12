@@ -66,8 +66,10 @@ typedef struct srSingleton {
 	/*** runtime values (PRIVATE) ***/
 	uint8_t status_report_requested;					// flag that SR has been requested
 	uint32_t status_report_systick;						// SysTick value for next status report
+	bool status_report_repeat_flag;						// flag to repeat the last status report
 	index_t stat_index;									// table index value for stat - determined during initialization
 	index_t status_report_list[NV_STATUS_REPORT_LEN];	// status report elements to report
+	index_t status_report_prev[NV_STATUS_REPORT_LEN];	// list of elements from previous status report
 	float status_report_value[NV_STATUS_REPORT_LEN];	// previous values for filtered reporting
 
 } srSingleton_t;
