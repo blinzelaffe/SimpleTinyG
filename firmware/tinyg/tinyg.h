@@ -45,7 +45,7 @@
 /****** REVISIONS ******/
 
 #ifndef TINYG_FIRMWARE_BUILD
-#define TINYG_FIRMWARE_BUILD   		442.02	// Added configuration version ($cv) and time tick report ($ti)
+#define TINYG_FIRMWARE_BUILD   		442.03	// small corrections to displayed values
 
 #endif
 #define TINYG_FIRMWARE_VERSION		0.97						// firmware major version
