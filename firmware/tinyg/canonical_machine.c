@@ -101,11 +101,11 @@
 #include "hardware.h"
 #include "util.h"
 #include "xio.h"			// for serial queue flush
-/*
+
 #ifdef __cplusplus
 extern "C"{
 #endif
-*/
+
 /***********************************************************************************
  **** STRUCTURE ALLOCATIONS ********************************************************
  ***********************************************************************************/
@@ -1222,7 +1222,7 @@ stat_t cm_feedhold_sequencing_callback()
 	if (cm.queue_flush_requested == true) {
 		if (((cm.motion_state == MOTION_STOP) ||
 			((cm.motion_state == MOTION_HOLD) && (cm.hold_state == FEEDHOLD_HOLD))) &&
-			!cm_get_runtime_busy()) {
+			 !cm_get_runtime_busy()) {
 			cm.queue_flush_requested = false;
 			cm_queue_flush();
 		}
@@ -1986,8 +1986,8 @@ void cm_print_mpo(nvObj_t *nv) { _print_pos(nv, fmt_mpo, MILLIMETERS);}
 void cm_print_ofs(nvObj_t *nv) { _print_pos(nv, fmt_ofs, MILLIMETERS);}
 
 #endif // __TEXT_MODE
-/*
+
 #ifdef __cplusplus
 }
 #endif
-*/
+

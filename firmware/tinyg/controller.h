@@ -45,6 +45,7 @@ typedef struct controllerSingleton {	// main TG controller struct
 	uint8_t state;						// controller state
 	float null;							// dumping ground for items with no target
 	float fw_build;						// tinyg firmware build number
+	float config_version;				// tinyg configuration version for host / UI control
 	float fw_version;					// tinyg firmware version number
 	float hw_platform;					// tinyg hardware compatibility - platform type
 	float hw_version;					// tinyg hardware compatibility - platform revision

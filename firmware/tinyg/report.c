@@ -92,6 +92,7 @@ void _startup_helper(stat_t status, const char *msg)
 	nv_reset_nv_list();
 	nv_add_object((const char_t *)"fv");		// firmware version
 	nv_add_object((const char_t *)"fb");		// firmware build
+	nv_add_object((const char_t *)"cv");		// configuration version
 	nv_add_object((const char_t *)"hp");		// hardware platform
 	nv_add_object((const char_t *)"hv");		// hardware version
 	nv_add_object((const char_t *)"id");		// hardware ID
@@ -188,7 +189,7 @@ void sr_init_status_report()
 		if (sr_defaults[i][0] == NUL) break;				// quit on first blank array entry
 		sr.status_report_value[i] = -1234567;				// pre-load values with an unlikely number
 		nv->value = nv_get_index((const char_t *)"", sr_defaults[i]);// load the index for the SR element
-		if (nv->value == NO_MATCH) {
+		if (fp_EQ(nv->value, NO_MATCH)) {
 			rpt_exception(STAT_BAD_STATUS_REPORT_SETTING);	// trap mis-configured profile settings
 			return;
 		}

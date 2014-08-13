@@ -45,12 +45,13 @@
 /****** REVISIONS ******/
 
 #ifndef TINYG_FIRMWARE_BUILD
-#define TINYG_FIRMWARE_BUILD   		442.01	// Incremented build number (mistakenly re-used 441)
+#define TINYG_FIRMWARE_BUILD   		442.02	// Added configuration version ($cv) and time tick report ($ti)
 
 #endif
-#define TINYG_FIRMWARE_VERSION		0.97					// firmware major version
-#define TINYG_HARDWARE_PLATFORM		HW_PLATFORM_TINYG_XMEGA	// see hardware.h
-#define TINYG_HARDWARE_VERSION		HW_VERSION_TINYGV8		// see hardware.h
+#define TINYG_FIRMWARE_VERSION		0.97						// firmware major version
+#define TINYG_CONFIG_VERSION		5							// CV values started at 5 to provide bkwds compatibility
+#define TINYG_HARDWARE_PLATFORM		HW_PLATFORM_TINYG_XMEGA		// see hardware.h
+#define TINYG_HARDWARE_VERSION		HW_VERSION_TINYGV8			// see hardware.h
 #define TINYG_HARDWARE_VERSION_MAX	TINYG_HARDWARE_VERSION
 
 /****** COMPILE-TIME SETTINGS ******/

@@ -140,36 +140,6 @@ stat_t mp_aline(GCodeState_t *gm_in)
 	bf->length = length;
 	memcpy(&bf->gm, gm_in, sizeof(GCodeState_t));						// copy model state into planner buffer
 
-#define __NEW_JERK
-#ifndef __NEW_JERK
-	// compute both the unit vector and the jerk term in the same pass for efficiency
-	float diff = bf->gm.target[AXIS_X] - mm.position[AXIS_X];
-	if (fp_NOT_ZERO(diff)) {
-		bf->unit[AXIS_X] = diff / bf->length;
-		bf->jerk = square(bf->unit[AXIS_X] * cm.a[AXIS_X].jerk_max);
-	}
-	if (fp_NOT_ZERO(diff = bf->gm.target[AXIS_Y] - mm.position[AXIS_Y])) {
-		bf->unit[AXIS_Y] = diff / bf->length;
-		bf->jerk += square(bf->unit[AXIS_Y] * cm.a[AXIS_Y].jerk_max);
-	}
-	if (fp_NOT_ZERO(diff = bf->gm.target[AXIS_Z] - mm.position[AXIS_Z])) {
-		bf->unit[AXIS_Z] = diff / bf->length;
-		bf->jerk += square(bf->unit[AXIS_Z] * cm.a[AXIS_Z].jerk_max);
-	}
-	if (fp_NOT_ZERO(diff = bf->gm.target[AXIS_A] - mm.position[AXIS_A])) {
-		bf->unit[AXIS_A] = diff / bf->length;
-		bf->jerk += square(bf->unit[AXIS_A] * cm.a[AXIS_A].jerk_max);
-	}
-	if (fp_NOT_ZERO(diff = bf->gm.target[AXIS_B] - mm.position[AXIS_B])) {
-		bf->unit[AXIS_B] = diff / bf->length;
-		bf->jerk += square(bf->unit[AXIS_B] * cm.a[AXIS_B].jerk_max);
-	}
-	if (fp_NOT_ZERO(diff = bf->gm.target[AXIS_C] - mm.position[AXIS_C])) {
-		bf->unit[AXIS_C] = diff / bf->length;
-		bf->jerk += square(bf->unit[AXIS_C] * cm.a[AXIS_C].jerk_max);
-	}
-	bf->jerk = sqrt(bf->jerk) * JERK_MULTIPLIER;
-#else
 	// Compute the unit vector and find the right jerk to use (combined operations)
 	// To determine the jerk value to use for the block we want to find the axis for which
 	// the jerk cannot be exceeded - the 'jerk-limit' axis. This is the axis for which
@@ -248,7 +218,6 @@ stat_t mp_aline(GCodeState_t *gm_in)
 	// set up and pre-compute the jerk terms needed for this round of planning
 //	bf->jerk = cm.a[bf->jerk_axis].recip_jerk * fabs(bf->unit[bf->jerk_axis]);// scale the jerk
 	bf->jerk = cm.a[bf->jerk_axis].jerk_max * JERK_MULTIPLIER / fabs(bf->unit[bf->jerk_axis]);	// scale the jerk
-#endif
 
 	bf->recip_jerk = 1/bf->jerk;
 	bf->cbrt_jerk = cbrt(bf->jerk);											// compute cached jerk terms used by planning
@@ -345,7 +314,6 @@ static void _calc_move_times(GCodeState_t *gms, const float position[])	// gms =
 	float max_time=0;				// time required for the rate-limiting axis
 	float tmp_time=0;				// used in computation
 	gms->minimum_time = 8675309;	// arbitrarily large number
-//	gms->limiting_axis = AXIS_X;	// by default
 
 	// compute times for feed motion
 	if (gms->motion_mode != MOTION_MODE_STRAIGHT_TRAVERSE) {
@@ -592,9 +560,7 @@ static float _get_junction_vmax(const float a_unit[], const float b_unit[])
 	float delta = (sqrt(a_delta) + sqrt(b_delta))/2;
 	float sintheta_over2 = sqrt((1 - costheta)/2);
 	float radius = delta * sintheta_over2 / (1-sintheta_over2);
-	float velocity = sqrt(radius * cm.junction_acceleration);
-//	printf ("v:%f\n", velocity);	//+++++
-	return (velocity);
+	return(sqrt(radius * cm.junction_acceleration));
 }
 
 /*************************************************************************
