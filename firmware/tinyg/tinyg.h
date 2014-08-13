@@ -45,7 +45,7 @@
 /****** REVISIONS ******/
 
 #ifndef TINYG_FIRMWARE_BUILD
-#define TINYG_FIRMWARE_BUILD   		440.09	// readline sliding window experiment - ready for testing by various hosts
+#define TINYG_FIRMWARE_BUILD   		441.01	// folded in idempotent status reports
 
 #endif
 #define TINYG_FIRMWARE_VERSION		0.97					// firmware major version

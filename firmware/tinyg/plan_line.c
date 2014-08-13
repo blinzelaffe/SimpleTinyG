@@ -102,9 +102,10 @@ stat_t mp_aline(GCodeState_t *gm_in)
 	float junction_velocity;
 	uint8_t mr_flag = false;
 
-	if (vector_equal(mm.position, gm_in->target)) 	// exit if the move has zero movement. At all.
+	if (vector_equal(mm.position, gm_in->target)) {	// exit if the move has zero movement. At all.
+		sr_request_status_report(SR_REQUEST_IMMEDIATE_FULL);
 		return (STAT_OK);
-
+	}
 	// If _calc_move_times() says the move will take less than the minimum move time
 	// get a more accurate time estimate based on starting velocity and acceleration.
 	// The time of the move is determined by its initial velocity (Vi) and how much
@@ -128,6 +129,7 @@ stat_t mp_aline(GCodeState_t *gm_in)
 		}
 		float move_time = (2 * length) / (2*entry_velocity + delta_velocity);// compute execution time for this move
 		if (move_time < MIN_BLOCK_TIME) {
+			sr_request_status_report(SR_REQUEST_IMMEDIATE_FULL);
 			return (STAT_MINIMUM_TIME_MOVE);
 		}
 	}

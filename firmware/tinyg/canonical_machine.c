@@ -361,7 +361,7 @@ float cm_get_work_position(GCodeState_t *gcode_state, uint8_t axis)
 void cm_finalize_move() {
 	copy_vector(cm.gmx.position, cm.gm.target);		// update model position
 
-	// if in ivnerse time mode reset feed rate so next block requires an explicit feed rate setting
+	// if in inverse time mode reset feed rate so next block requires an explicit feed rate setting
 	if ((cm.gm.feed_rate_mode == INVERSE_TIME_MODE) && (cm.gm.motion_mode == MOTION_MODE_STRAIGHT_FEED)) {
 		cm.gm.feed_rate = 0;
 	}
@@ -1321,7 +1321,7 @@ static void _exec_program_finalize(float *value, float *flag)
 	//	cm_set_motion_mode(MOTION_MODE_STRAIGHT_FEED);	// NIST specifies G1, but we cancel motion mode. Safer.
 		cm_set_motion_mode(MODEL, MOTION_MODE_CANCEL_MOTION_MODE);
 	}
-	sr_request_status_report(SR_IMMEDIATE_REQUEST);		// request a final status report (not unfiltered)
+	sr_request_status_report(SR_REQUEST_IMMEDIATE);		// request a final and full status report (not filtered)
 }
 
 void cm_cycle_start()
