@@ -87,7 +87,7 @@
 #endif
 
 typedef struct readlineSlot {			// input buffer slots
-	uint8_t status;						// status of slot
+	uint8_t state;						// state of slot
 	uint32_t seqnum;					// sequence number of slot
 	char_t buf[READLINE_SLOT_SIZE];		// allocated buffer for slot
 } slot_t;
@@ -378,32 +378,38 @@ void xio_set_stderr(const uint8_t dev)
  *
  *  Notes:
  *
- *	- Accepts CR or LF as line terminator. Replaces CR or LF with NUL in the returned string.
  *  - Only Single Device Read is currently implemented
- *  - Assumes synchronous operation. The readline() caller (controller) must completely consume
- *		the returned line before calling readline() again.
+ *
+ *	- Accepts CR or LF as line terminator. Replaces CR or LF with NUL in the returned string.
+ *
+ *  - Assumes synchronous operation. The readline() caller (controller) must completely finish
+ *		with the the returned line (PROCESSING state) before calling readline() again. When
+ *		readline() is called it frees the PROCESSING buffer.
+ *
+ *	- The number of free buffers reported back in the footer or the window report will always
+ *		be 2 less than the number of free buffers you think you should have. This is because there
+ *		is always a buffer FILLING, and there is always a buffer PROCESSING.
  */
+uint8_t xio_get_window_slots() { return xio.slots_free; }
 
 // readline() helpers
 
-uint8_t xio_get_window_slots() { return xio.slots_free; }
-
-int8_t _get_next_slot(int8_t s, uint8_t status)  // starting on s, return index of first slot with a given status
+int8_t _get_next_slot(int8_t s, uint8_t state)  // starting on s, return index of first slot with a given state
 {
 	while (s < READLINE_SLOTS) {
-		if (xio.slot[s].status == status) return (s);
+		if (xio.slot[s].state == state) return (s);
 		s++;
 	}
 	return (-1);
 }
 
-int8_t _get_lowest_seqnum_slot(uint8_t status)	// return slot with lowest non-zero sequence number for a given status
+int8_t _get_lowest_seqnum_slot(uint8_t state)	// return slot with lowest non-zero sequence number for a given state
 {
 	int8_t slot = -1;
 	uint32_t seqnum = MAX_ULONG;
 
 	for (uint8_t s=0; s < READLINE_SLOTS; s++) {
-		if ((xio.slot[s].seqnum != 0) && (xio.slot[s].status == status) && (xio.slot[s].seqnum < seqnum)) {
+		if ((xio.slot[s].seqnum != 0) && (xio.slot[s].state == state) && (xio.slot[s].seqnum < seqnum)) {
 			seqnum = xio.slot[s].seqnum;
 			slot = s;
 		}
@@ -414,15 +420,16 @@ int8_t _get_lowest_seqnum_slot(uint8_t status)	// return slot with lowest non-ze
 void _mark_slot(int8_t s)	// read slot contents. discard nuls, mark as CTRL or DATA, and set seqnum
 {
 	if (xio.slot[s].buf[0] == NUL) {
-		xio.slot[s].status = SLOT_IS_FREE;
+		xio.slot[s].state = SLOT_IS_FREE;
 		xio.slot[s].seqnum = 0;
-		return;												// return if no data present
+		return;													// return if no data present
 	}
-	xio.slot[s].seqnum = ++xio.next_seqnum;					// mark w/sequence number
-	if (strchr("{$?!~%Hh", xio.slot[s].buf[0]) != NULL) {	// a match indicates control line
-		xio.slot[s].status = SLOT_IS_CTRL;
+
+	xio.slot[s].seqnum = ++xio.next_seqnum;						// mark w/sequence number
+	if (strchr("{$?!~%Hh", xio.slot[s].buf[0]) != NULL) {		// a match indicates control line
+		xio.slot[s].state = SLOT_IS_CTRL;
 	} else {
-		xio.slot[s].status = SLOT_IS_DATA;
+		xio.slot[s].state = SLOT_IS_DATA;
 	}
 }
 
@@ -433,17 +440,17 @@ char_t *_return_slot(devflags_t *flags) // return the lowest seq ctrl, then the 
 
 	xio.slots_free = 0;											// update free slot count
 	for (s=0; s < READLINE_SLOTS; s++) {
-		if (xio.slot[s].status == SLOT_IS_FREE) {
+		if (xio.slot[s].state == SLOT_IS_FREE) {
 			xio.slots_free++;
 		}
 	}
 	if ((s = _get_lowest_seqnum_slot(SLOT_IS_CTRL)) != -1) {	// return CTRL slot
-		xio.slot[s].status = SLOT_IS_PROCESSING;
+		xio.slot[s].state = SLOT_IS_PROCESSING;
 		*flags = DEV_IS_CTRL;
 		return (xio.slot[s].buf);
 	}
 	if ((s = _get_lowest_seqnum_slot(SLOT_IS_DATA)) != -1) {	// return DATA slot
-		xio.slot[s].status = SLOT_IS_PROCESSING;
+		xio.slot[s].state = SLOT_IS_PROCESSING;
 		*flags = DEV_IS_DATA;
 		return (xio.slot[s].buf);
 	}
@@ -458,7 +465,7 @@ char_t *readline(devflags_t *flags, uint16_t *size)
 
 	// Free a previously processing slot (assumes calling readline() means a free should occur)
 	if ((s = _get_next_slot(0, SLOT_IS_PROCESSING)) != -1) {
-		xio.slot[s].status = SLOT_IS_FREE;
+		xio.slot[s].state = SLOT_IS_FREE;
 		xio.slot[s].seqnum = 0;
 	}
 
@@ -475,8 +482,8 @@ char_t *readline(devflags_t *flags, uint16_t *size)
 	s=0;
 	while ((s = _get_next_slot(s, SLOT_IS_FREE)) != -1) {
 		if (xio_gets_usart(&ds[XIO_DEV_USB], xio.slot[s].buf, READLINE_SLOT_SIZE) == STAT_EAGAIN) {
-			xio.slot[s].status = SLOT_IS_FILLING;
-			break;									// break out on first partially filled line
+			xio.slot[s].state = SLOT_IS_FILLING;	// got some characters. Declare the buffer to be filling
+			return (_return_slot(flags));			// no more characters to read. Return an available slot
 		}
 		_mark_slot(s++);							// mark the completed line as ctrl or data or reject blank lines
 	}
