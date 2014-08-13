@@ -45,7 +45,7 @@
 /****** REVISIONS ******/
 
 #ifndef TINYG_FIRMWARE_BUILD
-#define TINYG_FIRMWARE_BUILD   		441.01	// folded in idempotent status reports
+#define TINYG_FIRMWARE_BUILD   		442.01	// Incremented build number (mistakenly re-used 441)
 
 #endif
 #define TINYG_FIRMWARE_VERSION		0.97					// firmware major version
