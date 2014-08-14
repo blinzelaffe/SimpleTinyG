@@ -380,10 +380,10 @@ typedef struct stRunSingleton {			// Stepper static values and axis parameters
 // Must be careful about volatiles in this one
 
 typedef struct stPrepMotor {
-	uint32_t substep_increment;	 		// total steps in axis times substep factor
+	uint32_t substep_increment;			// total steps in axis times substep factor
 
 	// direction and direction change
-	int8_t direction;					// travel direction corrected for polarity
+	uint8_t direction;					// travel direction corrected for polarity (CW==0. CCW==1)
 	uint8_t prev_direction;				// travel direction from previous segment run for this motor
 	int8_t step_sign;					// set to +1 or -1 for encoders
 
@@ -422,8 +422,6 @@ stat_t stepper_test_assertions(void);
 
 uint8_t st_runtime_isbusy(void);
 void st_reset(void);
-void st_cycle_start(void);
-void st_cycle_end(void);
 stat_t st_clc(nvObj_t *nv);
 
 void st_energize_motors(void);
