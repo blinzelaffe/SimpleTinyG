@@ -104,8 +104,8 @@
 #define X_AXIS_MODE				AXIS_STANDARD		// xam		see canonical_machine.h cmAxisMode for valid values
 #define X_VELOCITY_MAX			16000 				// xvm		G0 max velocity in mm/min
 #define X_FEEDRATE_MAX			X_VELOCITY_MAX		// xfr 		G1 max feed rate in mm/min
-#define X_TRAVEL_MAX			220					// xtm		travel between switches or crashes
 #define X_TRAVEL_MIN			0					// xtn		monimum travel for soft limits
+#define X_TRAVEL_MAX			220					// xtm		travel between switches or crashes
 #define X_JERK_MAX				5000				// xjm		yes, that's "5 billion" mm/(min^3)
 #define X_JUNCTION_DEVIATION	JUNCTION_DEVIATION	// xjd
 #define X_SWITCH_MODE_MIN		SW_MODE_HOMING		// xsn		SW_MODE_DISABLED, SW_MODE_HOMING, SW_MODE_LIMIT, SW_MODE_HOMING_LIMIT
@@ -119,8 +119,8 @@
 #define Y_AXIS_MODE				AXIS_STANDARD
 #define Y_VELOCITY_MAX			16000
 #define Y_FEEDRATE_MAX			Y_VELOCITY_MAX
-#define Y_TRAVEL_MAX			220
 #define Y_TRAVEL_MIN			0
+#define Y_TRAVEL_MAX			220
 #define Y_JERK_MAX				5000
 #define Y_JUNCTION_DEVIATION	JUNCTION_DEVIATION
 #define Y_SWITCH_MODE_MIN		SW_MODE_HOMING
@@ -194,15 +194,6 @@
 #define C_ZERO_BACKOFF			2
 #define C_JERK_HOMING			C_JERK_MAX
 
-#ifdef __PLAN_R2
-#undef  X_JERK_MAX
-#define X_JERK_MAX				6					// xjm
-#undef  Y_JERK_MAX
-#define Y_JERK_MAX				6					// xjm
-#undef  Z_JERK_MAX
-#define Z_JERK_MAX				600000				//
-#endif
-
 // *** DEFAULT COORDINATE SYSTEM OFFSETS ***
 // Our convention is:
 //	- leave G54 in machine coordinates to act as a persistent absolute coordinate system
@@ -223,9 +214,9 @@
 #define G55_B_OFFSET 0
 #define G55_C_OFFSET 0
 
-#define G56_X_OFFSET (X_TRAVEL_MAX/2)	// special settings for running braid tests
-#define G56_Y_OFFSET 20
-#define G56_Z_OFFSET -10
+#define G56_X_OFFSET 0
+#define G56_Y_OFFSET 0
+#define G56_Z_OFFSET 0
 #define G56_A_OFFSET 0
 #define G56_B_OFFSET 0
 #define G56_C_OFFSET 0
