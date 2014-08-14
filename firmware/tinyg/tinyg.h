@@ -45,7 +45,7 @@
 /****** REVISIONS ******/
 
 #ifndef TINYG_FIRMWARE_BUILD
-#define TINYG_FIRMWARE_BUILD   		442.05	// cross-porting G2 056.02 - JSON parser
+#define TINYG_FIRMWARE_BUILD   		442.06	// cross-porting G2 057.01 - SysTickTimer changes
 
 #endif
 #define TINYG_FIRMWARE_VERSION		0.97						// firmware major version
