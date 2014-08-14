@@ -28,11 +28,7 @@
 #include "plan_arc.h"
 #include "planner.h"
 #include "util.h"
-/*
-#ifdef __cplusplus
-extern "C"{
-#endif
-*/
+
 // Allocate arc planner singleton structure
 
 arc_t arc;
@@ -488,9 +484,4 @@ static stat_t _test_arc_soft_limits()
 //	if (arc.gm.target[arc.plane_axis_0]
 	return(STAT_OK);
 }
-*/
-/*
-#ifdef __cplusplus
-}
-#endif
 */

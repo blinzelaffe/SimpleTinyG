@@ -34,10 +34,6 @@
 #include "xmega/xmega_eeprom.h"
 #endif
 
-#ifdef __cplusplus
-extern "C"{
-#endif
-
 /***********************************************************************************
  **** STRUCTURE ALLOCATIONS ********************************************************
  ***********************************************************************************/
@@ -126,8 +122,3 @@ stat_t write_persistent_value(nvObj_t *nv)
 	return (STAT_OK);
 }
 #endif // __ARM
-
-#ifdef __cplusplus
-}
-#endif
-

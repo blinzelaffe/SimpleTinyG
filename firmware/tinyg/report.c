@@ -36,10 +36,6 @@
 #include "util.h"
 #include "xio.h"
 
-#ifdef __cplusplus
-extern "C"{
-#endif
-
 /**** Allocation ****/
 
 srSingleton_t sr;
@@ -680,7 +676,3 @@ void qr_print_qo(nvObj_t *nv) { text_print_int(nv, fmt_qo);}
 void qr_print_qv(nvObj_t *nv) { text_print_ui8(nv, fmt_qv);}
 
 #endif // __TEXT_MODE
-
-#ifdef __cplusplus
-}
-#endif

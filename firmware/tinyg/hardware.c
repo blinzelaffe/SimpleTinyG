@@ -40,10 +40,6 @@
 #include "xmega/xmega_rtc.h"
 #endif
 
-#ifdef __cplusplus
-extern "C"{
-#endif
-
 /*
  * _port_bindings  - bind XMEGA ports to hardware - these changed at board revision 7
  * hardware_init() - lowest level hardware init
@@ -255,7 +251,3 @@ void hw_print_hv(nvObj_t *nv) { text_print_flt(nv, fmt_hv);}
 void hw_print_id(nvObj_t *nv) { text_print_str(nv, fmt_id);}
 
 #endif //__TEXT_MODE
-
-#ifdef __cplusplus
-}
-#endif

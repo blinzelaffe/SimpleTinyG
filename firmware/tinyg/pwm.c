@@ -36,10 +36,6 @@
 #include <avr/interrupt.h>
 #endif
 
-#ifdef __cplusplus
-extern "C"{
-#endif
-
 /***** PWM defines, structures and memory allocation *****/
 
 pwmSingleton_t pwm;
@@ -255,7 +251,3 @@ void pwm_print_p1wph(nvObj_t *nv) { text_print_flt(nv, fmt_p1wph);}
 void pwm_print_p1pof(nvObj_t *nv) { text_print_flt(nv, fmt_p1pof);}
 
 #endif //__TEXT_MODE
-
-#ifdef __cplusplus
-}
-#endif

@@ -45,7 +45,7 @@
 /****** REVISIONS ******/
 
 #ifndef TINYG_FIRMWARE_BUILD
-#define TINYG_FIRMWARE_BUILD   		442.03	// small corrections to displayed values
+#define TINYG_FIRMWARE_BUILD   		442.04	// removing unnecessary C++ cruft
 
 #endif
 #define TINYG_FIRMWARE_VERSION		0.97						// firmware major version
