@@ -193,7 +193,7 @@ char_t *escape_string(char_t *dst, char_t *src)
 /*
  * pstr2str() - return an AVR style progmem string as a RAM string. No effect on ARMs
  *
- *	This function deals with FLASH memory string confusion between the AVR serias and ARMs.
+ *	This function deals with FLASH memory string confusion between the AVR series and ARMs.
  *	AVRs typically have xxxxx_P() functions which take strings from FLASH as args.
  *	On ARMs there is no need for this as strings are handled identically in FLASH and RAM.
  *
@@ -215,7 +215,7 @@ char_t *pstr2str(const char *pgm_string)
 /*
  * fntoa() - return ASCII string given a float and a decimal precision value
  *
- *	Returns length of string, less the terminating NUL character
+ *	Like sprintf, fntoa returns length of string, less the terminating NUL character
  */
 char_t fntoa(char_t *str, float n, uint8_t precision)
 {

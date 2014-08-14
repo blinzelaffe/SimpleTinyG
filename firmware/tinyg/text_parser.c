@@ -82,7 +82,7 @@ stat_t text_parser(char_t *str)
 	// parse and execute the command (only processes 1 command per line)
 	ritorno(_text_parser_kernal(str, nv));			// run the parser to decode the command
 	if ((nv->valuetype == TYPE_NULL) || (nv->valuetype == TYPE_PARENT)) {
-		if (nv_get(nv) == STAT_COMPLETE){			// populate value, group values, or run uber-group displays
+		if (nv_get(nv) == STAT_COMPLETE) {			// populate value, group values, or run uber-group displays
 			return (STAT_OK);						// return for uber-group displays so they don't print twice
 		}
 	} else { 										// process SET and RUN commands
