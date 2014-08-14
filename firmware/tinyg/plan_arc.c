@@ -33,7 +33,6 @@
 
 arc_t arc;
 
-
 // Local functions
 
 static stat_t _compute_arc(void);

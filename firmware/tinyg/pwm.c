@@ -128,6 +128,7 @@ ISR(PWM2_ISR_vect)
 }
 #endif // __ARM
 */
+
 /*
  * pwm_set_freq() - set PWM channel frequency
  *
@@ -194,20 +195,20 @@ stat_t pwm_set_duty(uint8_t chan, float duty)
 	if (duty < 0.0) { return (STAT_INPUT_VALUE_TOO_SMALL);}
 	if (duty > 1.0) { return (STAT_INPUT_VALUE_TOO_LARGE);}
 
-	#ifdef __AVR
+#ifdef __AVR
 	// Ffrq = Fper/(2N(CCA+1))
 	// Fpwm = Fper/((N(PER+1))
 	float period_scalar = pwm.p[chan].timer->PER;
 	pwm.p[chan].timer->CCB = (uint16_t)(period_scalar * duty) + 1;
-	#endif // __AVR
+#endif // __AVR
 
-	#ifdef __ARM
+#ifdef __ARM
 	if (chan == PWM_1) {
 		spindle_pwm_pin = duty;
 	} else if (chan == PWM_2) {
 		secondary_pwm_pin = duty;
 	}
-	#endif // __ARM
+#endif // __ARM
 
 	return (STAT_OK);
 }

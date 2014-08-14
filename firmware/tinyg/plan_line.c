@@ -35,10 +35,6 @@
 #include "report.h"
 #include "util.h"
 
-//#ifdef __cplusplus
-//extern "C"{
-//#endif
-
 // aline planner routines / feedhold planning
 static void _calc_move_times(GCodeState_t *gms, const float position[]);
 static void _plan_block_list(mpBuf_t *bf, uint8_t *mr_flag);
@@ -89,12 +85,7 @@ uint8_t mp_get_runtime_busy()
  *	that are too short to move will accumulate and get executed once the accumulated error
  *	exceeds the minimums.
  */
-/*
-#define axis_length bf->body_length
-#define axis_velocity bf->cruise_velocity
-#define axis_tail bf->tail_length
-#define longest_tail bf->head_length
-*/
+
 stat_t mp_aline(GCodeState_t *gm_in)
 {
 	mpBuf_t *bf; 						// current move pointer
@@ -752,8 +743,3 @@ stat_t mp_end_hold()
 	}
 	return (STAT_OK);
 }
-/*
-#ifdef __cplusplus
-}
-#endif
-*/

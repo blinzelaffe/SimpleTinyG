@@ -31,7 +31,7 @@
 #include "stepper.h"
 #include "kinematics.h"
 
-//static void _inverse_kinematics(float travel[], float joint[]);
+static void _inverse_kinematics(const float travel[], float joint[]);
 
 /*
  * ik_kinematics() - wrapper routine for inverse kinematics
@@ -49,8 +49,7 @@ void ik_kinematics(const float travel[], float steps[])
 {
 	float joint[AXES];
 
-//	_inverse_kinematics(travel, joint);				// you can insert inverse kinematics transformations here
-	memcpy(joint, travel, sizeof(float)*AXES);		//...or just do a memcpy for Cartesian machines
+	_inverse_kinematics(travel, joint);				// insert inverse kinematics transformations here
 
 	// Map motors to axes and convert length units to steps
 	// Most of the conversion math has already been done in during config in steps_per_unit()
@@ -90,12 +89,15 @@ void ik_kinematics(const float travel[], float steps[])
  *	and ideally should be no more than 25-50% of the segment time. Currently segments
  *	run avery 5 ms, but this might be lowered. To profile this time look at the
  *	time it takes to complete the mp_exec_move() function.
+ *
+ *	Note: the compiler will  inline trivial functions (like memcpy) so there is no
+ *	size or performance penalty for breaking this out
  */
-/*
-static void _inverse_kinematics(float travel[], float joint[])
+static void _inverse_kinematics(const float travel[], float joint[])
 {
-	for (uint8_t i=0; i<AXES; i++) {
-		joint[i] = travel[i];
-	}
+	memcpy(joint, travel, sizeof(float)*AXES);		// just do a memcpy for Cartesian machines
+
+//	for (uint8_t i=0; i<AXES; i++) {
+//		joint[i] = travel[i];
+//	}
 }
-*/

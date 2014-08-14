@@ -27,29 +27,27 @@
  */
 /* --- Planner Notes ----
  *
- *	The planner works below the canonical machine and above the motor mapping
- *	and stepper execution layers. A rudimentary multitasking capability is
- *	implemented for long-running commands such as lines, arcs, and dwells.
- *	These functions are coded as non-blocking continuations - which are simple
- *	state machines that are re-entered multiple times until a particular
- *	operation is complete. These functions have 2 parts - the initial call,
- *	which sets up the local context, and callbacks (continuations) that are
- *	called from the main loop (in controller.c).
+ *	The planner works below the canonical machine and above the motor mapping and stepper
+ *	execution layers. A rudimentary multitasking capability is implemented for long-running
+ *	commands such as lines, arcs, and dwells. These functions are coded as non-blocking
+ *	continuations - which are simple state machines that are re-entered multiple times
+ *	until a particular operation is complete. These functions have 2 parts - the initial call,
+ *	which sets up the local context, and callbacks (continuations) that are called from the
+ *	main loop (in controller.c).
  *
- *	One important concept is isolation of the three layers of the data model -
- *	the Gcode model (gm), planner model (bf queue & mm), and runtime model (mr).
- *	These are designated as "model", "planner" and "runtime" in function names.
+ *	One important concept is isolation of the three layers of the data model - the Gcode model
+ *	(gm), planner model (bf queue & mm), and runtime model (mr). These are designated as
+ *	"model", "planner" and "runtime" in function names.
  *
- *	The Gcode model is owned by the canonical machine and should only be accessed
- *	by cm_xxxx() functions. Data from the Gcode model is transferred to the planner
- *	by the mp_xxx() functions called by the canonical machine.
+ *	The Gcode model is owned by the canonical machine and should only be accessed by cm_xxxx()
+ *	functions. Data from the Gcode model is transferred to the planner by the mp_xxx()
+ *	functions called by the canonical machine.
  *
- *	The planner should only use data in the planner model. When a move (block)
- *	is ready for execution the planner data is transferred to the runtime model,
- *	which should also be isolated.
+ *	The planner should only use data in the planner model. When a move (block) is ready for
+ *	execution the planner data is transferred to the runtime model, which should also be isolated.
  *
- *	Lower-level models should never use data from upper-level models as the data
- *	may have changed and lead to unpredictable results.
+ *	Lower-level models should never use data from upper-level models as the data may have
+ *	changed and lead to unpredictable results.
  */
 #include "tinyg.h"
 #include "config.h"
@@ -61,11 +59,7 @@
 #include "encoder.h"
 #include "report.h"
 #include "util.h"
-/*
-#ifdef __cplusplus
-extern "C"{
-#endif
-*/
+
 // Allocate planner structures
 
 mpBufferPool_t mb;				// move buffer queue
@@ -83,6 +77,11 @@ mpMoveRuntimeSingleton_t mr;	// context for line runtime
 // execution routines (NB: These are all called from the LO interrupt)
 static stat_t _exec_dwell(mpBuf_t *bf);
 static stat_t _exec_command(mpBuf_t *bf);
+
+#ifdef __DEBUG
+static uint8_t _get_buffer_index(mpBuf_t *bf);
+static void _dump_plan_buffer(mpBuf_t *bf);
+#endif
 
 /*
  * planner_init()
@@ -242,7 +241,7 @@ stat_t mp_dwell(float seconds)
 	mpBuf_t *bf;
 
 	if ((bf = mp_get_write_buffer()) == NULL) {			// get write buffer or fail
-		return(cm_hard_alarm(STAT_BUFFER_FULL_FATAL));	// not ever supposed to fail
+		return(cm_hard_alarm(STAT_BUFFER_FULL_FATAL));	// (not ever supposed to fail)
 	}
 	bf->bf_func = _exec_dwell;							// register callback to dwell start
 	bf->gm.move_time = seconds;							// in seconds, not minutes
@@ -253,26 +252,26 @@ stat_t mp_dwell(float seconds)
 
 static stat_t _exec_dwell(mpBuf_t *bf)
 {
-	st_prep_dwell((uint32_t)(bf->gm.move_time * 1000000));// convert seconds to uSec
+	st_prep_dwell((uint32_t)(bf->gm.move_time * 1000000.0));// convert seconds to uSec
 	if (mp_free_run_buffer()) cm_cycle_end();			// free buffer & perform cycle_end if planner is empty
 	return (STAT_OK);
 }
 
-/**** PLANNER BUFFERS *****************************************************
+/**** PLANNER BUFFERS *******************************************************************
  *
- * Planner buffers are used to queue and operate on Gcode blocks. Each buffer
- * contains one Gcode block which may be a move, and M code, or other command
- * that must be executed synchronously with movement.
+ *	Planner buffers are used to queue and operate on Gcode blocks. Each buffer contains
+ *	one Gcode block which may be a move, and M code, or other command that must be
+ *	executed synchronously with movement.
  *
- * Buffers are in a circularly linked list managed by a WRITE pointer and a RUN pointer.
- * New blocks are populated by (1) getting a write buffer, (2) populating the buffer,
- * then (3) placing it in the queue (queue write buffer). If an exception occurs
- * during population you can unget the write buffer before queuing it, which returns
- * it to the pool of available buffers.
+ *	Buffers are in a circularly linked list managed by a WRITE pointer and a RUN pointer.
+ *	New blocks are populated by (1) getting a write buffer, (2) populating the buffer,
+ *	then (3) placing it in the queue (queue write buffer). If an exception occurs
+ *	during population you can unget the write buffer before queuing it, which returns
+ *	it to the pool of available buffers.
  *
- * The RUN buffer is the buffer currently executing. It may be retrieved once for
- * simple commands, or multiple times for long-running commands like moves. When
- * the command is complete the run buffer is returned to the pool by freeing it.
+ *	The RUN buffer is the buffer currently executing. It may be retrieved once for
+ *	simple commands, or multiple times for long-running commands like moves. When
+ *	the command is complete the run buffer is returned to the pool by freeing it.
  *
  * Notes:
  *	The write buffer pointer only moves forward on _queue_write_buffer, and
@@ -445,8 +444,7 @@ void mp_copy_buffer(mpBuf_t *bf, const mpBuf_t *bp)
 	bf->pv = pv;
 }
 
-/*
-// currently this routine is only used by debug routines
+#ifdef __DEBUG	// currently this routine is only used by debug routines
 uint8_t mp_get_buffer_index(mpBuf_t *bf)
 {
 	mpBuf_t *b = bf;				// temp buffer pointer
@@ -459,7 +457,7 @@ uint8_t mp_get_buffer_index(mpBuf_t *bf)
 	}
 	return(cm_hard_alarm(PLANNER_BUFFER_POOL_SIZE));	// should never happen
 }
-*/
+#endif
 
 /****************************
  * END OF PLANNER FUNCTIONS *
@@ -474,8 +472,67 @@ uint8_t mp_get_buffer_index(mpBuf_t *bf)
  * TEXT MODE SUPPORT
  * Functions to print variables from the cfgArray table
  ***********************************************************************************/
-/*
-#ifdef __cplusplus
+
+//************************************************************************************
+//***** UNIT TESTS AND DEBUG CODE ****************************************************
+//************************************************************************************
+
+/****** DEBUG Code ******	(see beginning of file for static function prototypes) */
+
+#ifdef __DEBUG
+void mp_dump_running_plan_buffer() { _dump_plan_buffer(mb.r);}
+void mp_dump_plan_buffer_by_index(uint8_t index) { _dump_plan_buffer(&mb.bf[index]);	}
+
+static void _dump_plan_buffer(mpBuf_t *bf)
+{
+	fprintf_P(stderr, PSTR("***Runtime Buffer[%d] bstate:%d  mtype:%d  mstate:%d  replan:%d\n"),
+			_get_buffer_index(bf),
+			bf->buffer_state,
+			bf->move_type,
+			bf->move_state,
+			bf->replannable);
+
+	print_scalar(PSTR("line number:     "), bf->linenum);
+	print_vector(PSTR("position:        "), mm.position, AXES);
+	print_vector(PSTR("target:          "), bf->target, AXES);
+	print_vector(PSTR("unit:            "), bf->unit, AXES);
+	print_scalar(PSTR("jerk:            "), bf->jerk);
+	print_scalar(PSTR("time:            "), bf->time);
+	print_scalar(PSTR("length:          "), bf->length);
+	print_scalar(PSTR("head_length:     "), bf->head_length);
+	print_scalar(PSTR("body_length:     "), bf->body_length);
+	print_scalar(PSTR("tail_length:     "), bf->tail_length);
+	print_scalar(PSTR("entry_velocity:  "), bf->entry_velocity);
+	print_scalar(PSTR("cruise_velocity: "), bf->cruise_velocity);
+	print_scalar(PSTR("exit_velocity:   "), bf->exit_velocity);
+	print_scalar(PSTR("exit_vmax:       "), bf->exit_vmax);
+	print_scalar(PSTR("entry_vmax:      "), bf->entry_vmax);
+	print_scalar(PSTR("cruise_vmax:     "), bf->cruise_vmax);
+	print_scalar(PSTR("delta_vmax:      "), bf->delta_vmax);
+	print_scalar(PSTR("braking_velocity:"), bf->braking_velocity);
 }
-#endif
-*/
+
+void mp_dump_runtime_state(void)
+{
+	fprintf_P(stderr, PSTR("***Runtime Singleton (mr)\n"));
+	print_scalar(PSTR("line number:       "), mr.linenum);
+	print_vector(PSTR("position:          "), mr.position, AXES);
+	print_vector(PSTR("target:            "), mr.target, AXES);
+	print_scalar(PSTR("length:            "), mr.length);
+
+	print_scalar(PSTR("move_time:         "), mr.move_time);
+//	print_scalar(PSTR("accel_time;        "), mr.accel_time);
+//	print_scalar(PSTR("elapsed_accel_time:"), mr.elapsed_accel_time);
+	print_scalar(PSTR("midpoint_velocity: "), mr.midpoint_velocity);
+//	print_scalar(PSTR("midpoint_accel:    "), mr.midpoint_acceleration);
+//	print_scalar(PSTR("jerk_div2:         "), mr.jerk_div2);
+
+	print_scalar(PSTR("segments:          "), mr.segments);
+	print_scalar(PSTR("segment_count:     "), mr.segment_count);
+	print_scalar(PSTR("segment_move_time: "), mr.segment_move_time);
+//	print_scalar(PSTR("segment_accel_time:"), mr.segment_accel_time);
+	print_scalar(PSTR("microseconds:      "), mr.microseconds);
+	print_scalar(PSTR("segment_length:	  "), mr.segment_length);
+	print_scalar(PSTR("segment_velocity:  "), mr.segment_velocity);
+}
+#endif // __DEBUG

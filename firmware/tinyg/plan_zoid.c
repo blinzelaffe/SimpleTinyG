@@ -31,11 +31,7 @@
 #include "planner.h"
 #include "report.h"
 #include "util.h"
-/*
-#ifdef __cplusplus
-extern "C"{
-#endif
-*/
+
 /*
  * mp_calculate_trapezoid() - calculate trapezoid parameters
  *
@@ -415,8 +411,3 @@ float mp_get_target_velocity(const float Vi, const float L, const mpBuf_t *bf)
 #endif
     return estimate;
 }
-/*
-#ifdef __cplusplus
-}
-#endif
-*/
