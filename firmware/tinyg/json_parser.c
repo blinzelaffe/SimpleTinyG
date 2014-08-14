@@ -31,7 +31,6 @@
 #include "json_parser.h"
 #include "text_parser.h"
 #include "canonical_machine.h"
-#include "planner.h"
 #include "report.h"
 #include "util.h"
 #include "xio.h"					// for char definitions
@@ -117,6 +116,7 @@ static stat_t _json_parser_kernal(char_t *str)
 		}
 		// validate the token and get the index
 		if ((nv->index = nv_get_index(nv->group, nv->token)) == NO_MATCH) {
+			nv->valuetype = TYPE_NULL;
 			return (STAT_UNRECOGNIZED_NAME);
 		}
 		if ((nv_index_is_group(nv->index)) && (nv_group_is_prefixed(nv->token))) {
@@ -271,7 +271,6 @@ static stat_t _get_nv_pair_relaxed(nvObj_t *nv, char_t **pstr, int8_t *depth)
 		} else {
 			ritorno(nv_copy_string(nv, *pstr));
 		}
-
 		*pstr = ++tmp;
 
 	// boolean true/false
@@ -380,7 +379,6 @@ static stat_t _get_nv_pair_strict(nvObj_t *nv, char_t **pstr, int8_t *depth)
 		} else {
 			ritorno(nv_copy_string(nv, *pstr));
 		}
-
 		*pstr = ++tmp;
 
 	// boolean true/false
@@ -489,7 +487,6 @@ uint16_t json_serialize(nvObj_t *nv, char_t *out_buf, uint16_t size)
 			else if (nv->valuetype == TYPE_STRING)	{ str += (char_t)sprintf((char *)str, "\"%s\"",(char *)*nv->stringp);}
 			else if (nv->valuetype == TYPE_ARRAY)	{ str += (char_t)sprintf((char *)str, "[%s]",  (char *)*nv->stringp);}
 			else if (nv->valuetype == TYPE_FLOAT)	{ preprocess_float(nv);
-//													  str += fntoa((char *)str, nv->value, nv->precision);
 													  str += fntoa(str, nv->value, nv->precision);
 			}
 			else if (nv->valuetype == TYPE_BOOL) {
@@ -543,7 +540,7 @@ void json_print_object(nvObj_t *nv)
 void json_print_list(stat_t status, uint8_t flags)
 {
 	switch (flags) {
-		case JSON_NO_PRINT: { break; }
+		case JSON_NO_PRINT: break;
 		case JSON_OBJECT_FORMAT: { json_print_object(nv_body); break; }
 		case JSON_RESPONSE_FORMAT: { json_print_response(status); break; }
 	}
@@ -575,7 +572,7 @@ void json_print_response(uint8_t status)
 	return;
 #endif
 
-	if (js.json_verbosity == JV_SILENT) return;			// silent responses
+	if (js.json_verbosity == JV_SILENT) return;				// silent responses
 
 	// Body processing
 	nvObj_t *nv = nv_body;

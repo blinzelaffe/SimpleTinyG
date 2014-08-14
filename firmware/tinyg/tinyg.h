@@ -45,7 +45,7 @@
 /****** REVISIONS ******/
 
 #ifndef TINYG_FIRMWARE_BUILD
-#define TINYG_FIRMWARE_BUILD   		442.04	// removing unnecessary C++ cruft
+#define TINYG_FIRMWARE_BUILD   		442.05	// cross-porting G2 056.02 - JSON parser
 
 #endif
 #define TINYG_FIRMWARE_VERSION		0.97						// firmware major version
