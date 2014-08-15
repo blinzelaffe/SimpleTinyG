@@ -90,7 +90,7 @@ void controller_init(uint8_t std_in, uint8_t std_out, uint8_t std_err)
 	cs.hw_platform = TINYG_HARDWARE_PLATFORM;		// NB: HW version is set from EEPROM
 
 #ifdef __AVR
-	cs.state = CONTROLLER_STARTUP;					// ready to run startup lines
+	cs.controller_state = CONTROLLER_STARTUP;		// ready to run startup lines
 	xio_set_stdin(std_in);
 	xio_set_stdout(std_out);
 	xio_set_stderr(std_err);
@@ -273,23 +273,23 @@ static stat_t _command_dispatch()
 		case '~': { cm_request_cycle_start(); break; }
 
 		case NUL: { 									// blank line (just a CR)
-			if (cfg.comm_mode != JSON_MODE) {
+			if (cs.comm_mode != JSON_MODE) {
 				text_response(STAT_OK, cs.saved_buf);
 			}
 			break;
 		}
 		case '$': case '?': case 'H': { 				// text mode input
-			cfg.comm_mode = TEXT_MODE;
+			cs.comm_mode = TEXT_MODE;
 			text_response(text_parser(cs.bufp), cs.saved_buf);
 			break;
 		}
 		case '{': { 									// JSON input
-			cfg.comm_mode = JSON_MODE;
+			cs.comm_mode = JSON_MODE;
 			json_parser(cs.bufp);
 			break;
 		}
 		default: {										// anything else must be Gcode
-			if (cfg.comm_mode == JSON_MODE) {			// run it as JSON...
+			if (cs.comm_mode == JSON_MODE) {			// run it as JSON...
 				strncpy(cs.out_buf, cs.bufp, INPUT_BUFFER_LEN -8);					// use out_buf as temp
 				sprintf((char *)cs.bufp,"{\"gc\":\"%s\"}\n", (char *)cs.out_buf);	// '-8' is used for JSON chars
 				json_parser(cs.bufp);

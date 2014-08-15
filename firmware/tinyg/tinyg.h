@@ -45,7 +45,7 @@
 /****** REVISIONS ******/
 
 #ifndef TINYG_FIRMWARE_BUILD
-#define TINYG_FIRMWARE_BUILD   		442.09	// cross-porting G2 059.01 - stepper files
+#define TINYG_FIRMWARE_BUILD   		443.01	// prep for adding configurable serial streaming or windowing mode
 
 #endif
 #define TINYG_FIRMWARE_VERSION		0.97						// firmware major version
@@ -69,7 +69,6 @@
 /****** DEVELOPMENT SETTINGS ******/
 
 #define __DIAGNOSTIC_PARAMETERS				// enables system diagnostic parameters (_xx) in config_app
-#define __DEBUG_SETTINGS					// special settings. See settings.h
 //#define __CANNED_STARTUP					// run any canned startup moves
 
 //#define __SIMULATION						// for software-only simulations

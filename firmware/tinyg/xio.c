@@ -85,7 +85,7 @@
 #ifndef MAX_ULONG
 #define MAX_ULONG (4294967295)
 #endif
-
+/*
 typedef struct readlineSlot {			// input buffer slots
 	uint8_t state;						// state of slot
 	uint32_t seqnum;					// sequence number of slot
@@ -96,7 +96,8 @@ typedef struct xioSingleton {
 	magic_t magic_start;
 	FILE * stderr_shadow;				// used for stack overflow / memory integrity checking
 
-	// readline sliding window
+	// sliding window protocol (readline())
+	uint8_t windowing_enabled;			// set true to enable windowing protocol
 	uint8_t slots_free;
 	uint32_t next_seqnum;
 	slot_t slot[READLINE_SLOTS];
@@ -104,6 +105,7 @@ typedef struct xioSingleton {
 	magic_t magic_end;
 } xioSingleton_t;
 xioSingleton_t xio;
+*/
 
 /********************************************************************************
  * XIO Initializations, Resets and Assertions

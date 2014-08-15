@@ -63,6 +63,8 @@
 #ifndef XIO_H_ONCE
 #define XIO_H_ONCE
 
+#include "tinyg.h"
+
 /*************************************************************************
  *	Device configurations
  *************************************************************************/
@@ -193,6 +195,35 @@ typedef int (*x_gets_t)(xioDev_t *d, char *buf, const int size);
 typedef int (*x_getc_t)(FILE *);
 typedef int (*x_putc_t)(char, FILE *);
 typedef void (*x_flow_t)(xioDev_t *d);
+
+typedef struct windowSlot {				// windowing buffer slots
+	uint8_t state;						// state of slot
+	uint32_t seqnum;					// sequence number of slot
+	char_t buf[READLINE_SLOT_SIZE];		// allocated buffer for slot
+} slot_t;
+
+typedef struct xioSingleton {
+	magic_t magic_start;
+	FILE * stderr_shadow;				// used for stack overflow / memory integrity checking
+
+	// communications settings
+	uint8_t enable_cr;				// enable CR in CRFL expansion on TX
+	uint8_t enable_echo;			// enable text-mode echo
+	uint8_t enable_flow_control;	// enable XON/XOFF or RTS/CTS flow control
+	//	uint8_t ignore_crlf;			// ignore CR or LF on RX --- these 4 are shadow settings for XIO cntrl bits
+
+	uint8_t usb_baud_rate;			// see xio_usart.h for XIO_BAUD values
+	uint8_t usb_baud_flag;			// technically this belongs in the controller singleton
+
+	// sliding window protocol (readline())
+	uint8_t enable_windowing;			// set true to enable windowing protocol
+	uint8_t slots_free;
+	uint32_t next_seqnum;
+	slot_t slot[READLINE_SLOTS];
+
+	magic_t magic_end;
+} xioSingleton_t;
+xioSingleton_t xio;
 
 /*************************************************************************
  *	Sub-Includes and static allocations
