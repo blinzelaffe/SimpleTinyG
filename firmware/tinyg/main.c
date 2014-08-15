@@ -140,7 +140,6 @@ static void _application_init(void)
 	PMIC_EnableMediumLevel();
 	PMIC_EnableLowLevel();
 	sei();							// enable global interrupts
-	rpt_print_system_ready_message();// (LAST) announce system is ready
 }
 
 /*

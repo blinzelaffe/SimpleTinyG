@@ -89,13 +89,14 @@ void controller_init(uint8_t std_in, uint8_t std_out, uint8_t std_err)
 	cs.config_version = TINYG_CONFIG_VERSION;
 	cs.hw_platform = TINYG_HARDWARE_PLATFORM;		// NB: HW version is set from EEPROM
 
-#ifdef __AVR
 	cs.controller_state = CONTROLLER_STARTUP;		// ready to run startup lines
+
+#ifdef __AVR
 	xio_set_stdin(std_in);
 	xio_set_stdout(std_out);
 	xio_set_stderr(std_err);
-	cs.default_src = std_in;
-	tg_set_primary_source(cs.default_src);
+	xio.default_src = std_in;
+	tg_set_primary_source(xio.default_src);
 #endif
 
 #ifdef __ARM
@@ -203,6 +204,14 @@ static stat_t _command_dispatch()
 #ifdef __AVR
 	devflags_t flags;
 
+	// manage controller state
+	if (cs.controller_state == CONTROLLER_STARTUP) {	// first time through after reset
+		cs.controller_state = CONTROLLER_READY;
+		cm_request_queue_flush();
+		rpt_print_system_ready_message();
+	}
+
+	// read inputs
 	if ((cs.bufp = readline(&flags, &cs.linelen)) == NULL) {
 		return (STAT_OK);									// nothing to process yet
 	}
@@ -263,7 +272,7 @@ static stat_t _command_dispatch()
 
 	// set up the buffers
 	cs.linelen = strlen(cs.bufp)+1;						// linelen only tracks primary input
-	strncpy(cs.saved_buf, cs.bufp, INPUT_BUFFER_LEN-1);	// save input buffer for reporting
+	strncpy(cs.saved_buf, cs.bufp, SAVED_BUFFER_LEN-1);	// save input buffer for reporting
 
 	// dispatch the new text line
 	switch (toupper(*cs.bufp)) {						// first char
@@ -290,7 +299,7 @@ static stat_t _command_dispatch()
 		}
 		default: {										// anything else must be Gcode
 			if (cs.comm_mode == JSON_MODE) {			// run it as JSON...
-				strncpy(cs.out_buf, cs.bufp, INPUT_BUFFER_LEN -8);					// use out_buf as temp
+				strncpy(cs.out_buf, cs.bufp, MAXED_BUFFER_LEN -8);					// use out_buf as temp
 				sprintf((char *)cs.bufp,"{\"gc\":\"%s\"}\n", (char *)cs.out_buf);	// '-8' is used for JSON chars
 				json_parser(cs.bufp);
 			} else {									//...or run it as text
@@ -382,9 +391,9 @@ static stat_t _normal_idler()
  * and other messages are sent to the active device.
  */
 
-void tg_reset_source() { tg_set_primary_source(cs.default_src);}
-void tg_set_primary_source(uint8_t dev) { cs.primary_src = dev;}
-void tg_set_secondary_source(uint8_t dev) { cs.secondary_src = dev;}
+void tg_reset_source() { tg_set_primary_source(xio.default_src);}
+void tg_set_primary_source(uint8_t dev) { xio.primary_src = dev;}
+void tg_set_secondary_source(uint8_t dev) { xio.secondary_src = dev;}
 
 /*
  * _sync_to_tx_buffer() - return eagain if TX queue is backed up

@@ -461,7 +461,7 @@ const cfgItem_t cfgArray[] PROGMEM = {
 	{ "sys","ej",  _fipn, 0, js_print_ej,  get_ui8,   set_01,     (float *)&cs.comm_mode,			COMM_MODE },
 	{ "sys","jv",  _fipn, 0, js_print_jv,  get_ui8,   json_set_jv,(float *)&js.json_verbosity,		JSON_VERBOSITY },
 	{ "sys","js",  _fipn, 0, js_print_js,  get_ui8,   set_01,     (float *)&js.json_syntax, 		JSON_SYNTAX_MODE },
-	{ "sys","jf",  _fipn, 0, js_print_jf,  get_ui8,   set_ui8,    (float *)&js.json_footer_style, 	JSON_FOOTER_STYLE },
+//	{ "sys","jf",  _fipn, 0, js_print_jf,  get_ui8,   set_ui8,    (float *)&js.json_footer_style, 	JSON_FOOTER_STYLE },
 	{ "sys","tv",  _fipn, 0, tx_print_tv,  get_ui8,   set_01,     (float *)&txt.text_verbosity,		TEXT_VERBOSITY },
 	{ "sys","qv",  _fipn, 0, qr_print_qv,  get_ui8,   set_0123,   (float *)&qr.queue_report_verbosity,QUEUE_REPORT_VERBOSITY },
 	{ "sys","sv",  _fipn, 0, sr_print_sv,  get_ui8,   set_012,    (float *)&sr.status_report_verbosity,STATUS_REPORT_VERBOSITY },
@@ -471,7 +471,7 @@ const cfgItem_t cfgArray[] PROGMEM = {
 	{ "sys","ec",  _fipn, 0, cfg_print_ec,  get_ui8,   set_ec,     (float *)&xio.enable_cr,			COM_EXPAND_CR },
 	{ "sys","ee",  _fipn, 0, cfg_print_ee,  get_ui8,   set_ee,     (float *)&xio.enable_echo,		COM_ENABLE_ECHO },
 	{ "sys","ex",  _fipn, 0, cfg_print_ex,  get_ui8,   set_ex,     (float *)&xio.enable_flow_control,COM_ENABLE_FLOW_CONTROL },
-	{ "sys","ew",  _fipn, 0, cfg_print_ew,  get_ui8,   set_01,     (float *)&xio.enable_windowing,	COM_ENABLE_WINDOWING },
+	{ "sys","ew",  _fipn, 0, cfg_print_ew,  get_ui8,   set_01,     (float *)&xio.enable_window_mode,COM_ENABLE_WINDOW_MODE },
 	{ "sys","baud",_fn,   0, cfg_print_baud,get_ui8,   set_baud,   (float *)&xio.usb_baud_rate,		XIO_BAUD_115200 },
 	{ "sys","net", _fipn, 0, cfg_print_net, get_ui8,   set_ui8,    (float *)&cs.network_mode,		NETWORK_MODE },
 

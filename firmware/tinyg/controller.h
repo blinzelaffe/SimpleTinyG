@@ -28,8 +28,8 @@
 #ifndef CONTROLLER_H_ONCE
 #define CONTROLLER_H_ONCE
 
-//#define INPUT_BUFFER_LEN 255			// text buffer size (255 max)
-#define INPUT_BUFFER_LEN 80				// saved buffer size (for reporting only)
+#define SAVED_BUFFER_LEN 80				// saved buffer size (for reporting only)
+#define MAXED_BUFFER_LEN 255			// same as streaming RX buffer size as a worst case
 #define OUTPUT_BUFFER_LEN 512			// text buffer size
 // see also: tinyg.h MESSAGE_LEN and config.h NV_ lengths
 
@@ -49,12 +49,7 @@ typedef struct controllerSingleton {	// main TG controller struct
 
 	// communications state variables
 	uint8_t comm_mode;					// 0=text mode, 1=JSON mode
-	uint8_t primary_src;				// primary input source device
-	uint8_t secondary_src;				// secondary input source device
-	uint8_t default_src;				// default source device
 	uint8_t network_mode;				// 0=master, 1=repeater, 2=slave
-	uint16_t linelen;					// length of currently processing line
-	uint16_t read_index;				// length of line being read
 
 	// system state variables
 	uint8_t controller_state;
@@ -70,9 +65,9 @@ typedef struct controllerSingleton {	// main TG controller struct
 
 	// controller serial buffers
 	char_t *bufp;						// pointer to primary or secondary in buffer
-//	char_t in_buf[INPUT_BUFFER_LEN];	// primary input buffer
+	uint16_t linelen;					// length of currently processing line
 	char_t out_buf[OUTPUT_BUFFER_LEN];	// output buffer
-	char_t saved_buf[INPUT_BUFFER_LEN];	// save the input buffer
+	char_t saved_buf[SAVED_BUFFER_LEN];	// save the input buffer
 
 	magic_t magic_end;
 } controller_t;

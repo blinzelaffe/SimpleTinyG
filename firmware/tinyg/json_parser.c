@@ -609,7 +609,7 @@ void json_print_response(uint8_t status)
 	}
 
 	// Footer processing
-	if (js.json_footer_style == 1) {
+	if (xio.enable_window_mode == 0) {
 		if (_footer_style_1(nv, status) != STAT_OK) return;
 	} else {
 		if (_footer_style_2(nv, status) != STAT_OK) return;

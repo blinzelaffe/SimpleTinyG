@@ -96,6 +96,8 @@ enum xioDevNum_t {		// TYPE:	DEVICE:
 #define READLINE_SLOTS	16					// number of readline() input buffers (slots)
 #define READLINE_SLOT_SIZE 80				// input buffer length
 
+#define STREAMING_RX_BUFFER_LEN 255			// input buffer for streaming serial mode
+
 enum cmSlotState {							// readline() slot states
 	SLOT_IS_FREE = 0,						// slot is available
 	SLOT_IS_FILLING,						// slot is partially loaded
@@ -207,16 +209,23 @@ typedef struct xioSingleton {
 	FILE * stderr_shadow;				// used for stack overflow / memory integrity checking
 
 	// communications settings
-	uint8_t enable_cr;				// enable CR in CRFL expansion on TX
-	uint8_t enable_echo;			// enable text-mode echo
-	uint8_t enable_flow_control;	// enable XON/XOFF or RTS/CTS flow control
-	//	uint8_t ignore_crlf;			// ignore CR or LF on RX --- these 4 are shadow settings for XIO cntrl bits
+	uint8_t primary_src;				// primary input source device
+	uint8_t secondary_src;				// secondary input source device
+	uint8_t default_src;				// default source device
 
-	uint8_t usb_baud_rate;			// see xio_usart.h for XIO_BAUD values
-	uint8_t usb_baud_flag;			// technically this belongs in the controller singleton
+	uint8_t usb_baud_rate;				// see xio_usart.h for XIO_BAUD values
+	uint8_t usb_baud_flag;				// technically this belongs in the controller singleton
 
-	// sliding window protocol (readline())
-	uint8_t enable_windowing;			// set true to enable windowing protocol
+	uint8_t enable_cr;					// enable CR in CRFL expansion on TX (shadow setting for XIO cntrl bits)
+	uint8_t enable_echo;				// enable text-mode echo (shadow setting for XIO cntrl bits)
+	uint8_t enable_flow_control;		// enable XON/XOFF or RTS/CTS flow control (shadow setting for XIO cntrl bits)
+
+	// streaming reader
+	uint16_t read_index;				// length of line being read
+	char_t in_buf[STREAMING_RX_BUFFER_LEN];
+
+	// sliding window reader
+	uint8_t enable_window_mode;			// set true to enable windowing protocol
 	uint8_t slots_free;
 	uint32_t next_seqnum;
 	slot_t slot[READLINE_SLOTS];

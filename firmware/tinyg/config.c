@@ -107,11 +107,12 @@ void config_init()
 {
 	nvObj_t *nv = nv_reset_nv_list();
 	config_init_assertions();
+	cs.comm_mode = JSON_MODE;					// initial value until persistence is read
 
 #ifdef __ARM
 // ++++ The following code is offered until persistence is implemented.
 // ++++ Then you can use the AVR code (or something like it)
-	cfg.comm_mode = JSON_MODE;					// initial value until EEPROM is read
+//	cs.comm_mode = JSON_MODE;					// initial value until EEPROM is read
 	_set_defa(nv);
 #endif
 #ifdef __AVR

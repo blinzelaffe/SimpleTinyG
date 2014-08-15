@@ -45,7 +45,7 @@
 /****** REVISIONS ******/
 
 #ifndef TINYG_FIRMWARE_BUILD
-#define TINYG_FIRMWARE_BUILD   		443.01	// prep for adding configurable serial streaming or windowing mode
+#define TINYG_FIRMWARE_BUILD   		443.02	// added configurable serial streaming or windowing mode. Use $ew=1 to select windowing
 
 #endif
 #define TINYG_FIRMWARE_VERSION		0.97						// firmware major version

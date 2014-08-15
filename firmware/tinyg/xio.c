@@ -81,31 +81,10 @@
 #include "tinyg.h"						// needed by init() for default source
 #include "config.h"						// needed by init() for default source
 #include "controller.h"					// needed by init() for default source
+#include "util.h"
 
-#ifndef MAX_ULONG
-#define MAX_ULONG (4294967295)
-#endif
-/*
-typedef struct readlineSlot {			// input buffer slots
-	uint8_t state;						// state of slot
-	uint32_t seqnum;					// sequence number of slot
-	char_t buf[READLINE_SLOT_SIZE];		// allocated buffer for slot
-} slot_t;
-
-typedef struct xioSingleton {
-	magic_t magic_start;
-	FILE * stderr_shadow;				// used for stack overflow / memory integrity checking
-
-	// sliding window protocol (readline())
-	uint8_t windowing_enabled;			// set true to enable windowing protocol
-	uint8_t slots_free;
-	uint32_t next_seqnum;
-	slot_t slot[READLINE_SLOTS];
-
-	magic_t magic_end;
-} xioSingleton_t;
-xioSingleton_t xio;
-*/
+static char_t *_readline_window(devflags_t *flags, uint16_t *size);
+static char_t *_readline_stream(devflags_t *flags, uint16_t *size);
 
 /********************************************************************************
  * XIO Initializations, Resets and Assertions
@@ -335,7 +314,48 @@ void xio_set_stderr(const uint8_t dev)
 }
 
 /*
- * readline() - sliding window reader
+ * readline() - serial reader wrapper
+ */
+
+char_t *readline(devflags_t *flags, uint16_t *size)
+{
+	if (xio.enable_window_mode) return (_readline_window(flags, size));
+	return (_readline_stream(flags, size));
+}
+
+/*
+ * _readline_stream() - streaming serial reader
+ *
+ *	Read input line or return if not a completed line
+ *	xio_gets() is a non-blocking workalike of fgets()
+ */
+
+static char_t *_readline_stream(devflags_t *flags, uint16_t *size)
+{
+	stat_t status;
+
+	while (true) {
+		if ((status = xio_gets(xio.primary_src, xio.in_buf, sizeof(xio.in_buf))) == STAT_OK) {
+			break;
+		}
+/*
+		// handle end-of-file from file devices
+		if (status == STAT_EOF) {						// EOF can come from file devices only
+			if (cs.comm_mode == TEXT_MODE) {
+				fprintf_P(stderr, PSTR("End of command file\n"));
+				} else {
+				rpt_exception(STAT_EOF);				// not really an exception
+			}
+			tg_reset_source();							// reset to default source
+		}
+		return (status);								// Note: STAT_EAGAIN, errors, etc. will drop through
+*/
+	}
+	return(xio.in_buf);
+}
+
+/*
+ * readline_window() - sliding window reader
  *
  *	This function reads characters from an input device (e.g. USB) into the array of input slots
  *	and returns the next terminated buffer according to the rules below.
@@ -459,9 +479,9 @@ char_t *_return_slot(devflags_t *flags) // return the lowest seq ctrl, then the 
 	return ((char_t *)NULL);									// there was no slot to return
 }
 
-// actual readline() function
+// actual readline_window() function
 
-char_t *readline(devflags_t *flags, uint16_t *size)
+static char_t *_readline_window(devflags_t *flags, uint16_t *size)
 {
 	int8_t s=0;										// slot index
 
