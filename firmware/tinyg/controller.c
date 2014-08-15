@@ -202,8 +202,6 @@ static void _controller_HSM()
 static stat_t _command_dispatch()
 {
 #ifdef __AVR
-	devflags_t flags;
-
 	// manage controller state
 	if (cs.controller_state == CONTROLLER_STARTUP) {	// first time through after reset
 		cs.controller_state = CONTROLLER_READY;
@@ -212,31 +210,10 @@ static stat_t _command_dispatch()
 	}
 
 	// read inputs
+	devflags_t flags = DEV_IS_BOTH;
 	if ((cs.bufp = readline(&flags, &cs.linelen)) == NULL) {
-		return (STAT_OK);									// nothing to process yet
+		return (STAT_OK);								 // nothing to process
 	}
-/*
-	stat_t status;
-
-	// read input line or return if not a completed line
-	// xio_gets() is a non-blocking workalike of fgets()
-	while (true) {
-		if ((status = xio_gets(cs.primary_src, cs.in_buf, sizeof(cs.in_buf))) == STAT_OK) {
-			cs.bufp = cs.in_buf;
-			break;
-		}
-		// handle end-of-file from file devices
-		if (status == STAT_EOF) {						// EOF can come from file devices only
-			if (cfg.comm_mode == TEXT_MODE) {
-				fprintf_P(stderr, PSTR("End of command file\n"));
-			} else {
-				rpt_exception(STAT_EOF);				// not really an exception
-			}
-			tg_reset_source();							// reset to default source
-		}
-		return (status);								// Note: STAT_EAGAIN, errors, etc. will drop through
-	}
-*/
 #endif // __AVR
 #ifdef __ARM
 	// detect USB connection and transition to disconnected state if it disconnected
@@ -248,30 +225,10 @@ static stat_t _command_dispatch()
 	if ((cs.bufp = readline(device_flags, cs.linelen)) == NULL) {
 		return (STAT_OK);									// nothing to process yet
 	}
-/*
-	if (cs.state_usb0 == CONTROLLER_READY) {
-		if (read_line(cs.in_buf, &cs.read_index, sizeof(cs.in_buf)) != STAT_OK) {
-			cs.bufp = cs.in_buf;
-			return (STAT_OK);	// This is an exception: returns OK for anything NOT OK, so the idler always runs
-		}
-	} else if (cs.state_usb0 == CONTROLLER_NOT_CONNECTED) {
-		if (SerialUSB.isConnected() == false) return (STAT_OK);
-		cm_request_queue_flush();
-		rpt_print_system_ready_message();
-		cs.state_usb0 = CONTROLLER_STARTUP;
-
-	} else if (cs.state_usb0 == CONTROLLER_STARTUP) {		// run startup code
-		cs.state_usb0 = CONTROLLER_READY;
-
-	} else {
-		return (STAT_OK);
-	}
-	cs.read_index = 0;
-*/
 #endif // __ARM
 
 	// set up the buffers
-	cs.linelen = strlen(cs.bufp)+1;						// linelen only tracks primary input
+//	cs.linelen = strlen(cs.bufp)+1;						// linelen only tracks primary input
 	strncpy(cs.saved_buf, cs.bufp, SAVED_BUFFER_LEN-1);	// save input buffer for reporting
 
 	// dispatch the new text line

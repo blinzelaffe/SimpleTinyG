@@ -95,11 +95,11 @@ static char_t *_readline_stream(devflags_t *flags, uint16_t *size);
 void xio_init()
 {
 	// set memory integrity check
-//	xio_set_stderr(0);				// set a bogus value; may be overwritten with a real value
+	xio_set_stderr(0);				// set a bogus value; may be overwritten with a real value
 
 	memset(&xio, 0, sizeof(xioSingleton_t));	// clear all values
 
-	xio.slots_free = READLINE_SLOTS;
+	xio.slots_free = RX_WINDOW_SLOTS;
 
 	// setup device types
 	xio_init_usart();
@@ -313,31 +313,37 @@ void xio_set_stderr(const uint8_t dev)
 	xio.stderr_shadow = stderr;		// this is the last thing in RAM, so we use it as a memory corruption canary
 }
 
-/*
+/***************************************************************************************
  * readline() - serial reader wrapper
  */
 
 char_t *readline(devflags_t *flags, uint16_t *size)
 {
-	if (xio.enable_window_mode) return (_readline_window(flags, size));
+	if (xio.enable_window_mode) {
+		return (_readline_window(flags, size));
+	}
 	return (_readline_stream(flags, size));
 }
 
 /*
  * _readline_stream() - streaming serial reader
  *
- *	Read input line or return if not a completed line
- *	xio_gets() is a non-blocking workalike of fgets()
+ *	Functions:
+ *	  - Read input line or return NULL pointer if not a completed line
+ *	  - Size includes the space taken by the termination
+ *	  - Flags are ignored, as the AVR can only read from a single channel
+ *	  - Nul lines are trapped and discarded. Discarded chars are added to size to help byte counting
  */
 
 static char_t *_readline_stream(devflags_t *flags, uint16_t *size)
 {
 	stat_t status;
 
-	while (true) {
-		if ((status = xio_gets(xio.primary_src, xio.in_buf, sizeof(xio.in_buf))) == STAT_OK) {
-			break;
-		}
+	status = xio_gets(xio.primary_src, xio.in_buf, sizeof(xio.in_buf));
+	if (status == XIO_EAGAIN) {
+		*size = 0;
+		return ((char_t *)NULL);
+	}
 /*
 		// handle end-of-file from file devices
 		if (status == STAT_EOF) {						// EOF can come from file devices only
@@ -350,7 +356,8 @@ static char_t *_readline_stream(devflags_t *flags, uint16_t *size)
 		}
 		return (status);								// Note: STAT_EAGAIN, errors, etc. will drop through
 */
-	}
+	// return if status is XIO_OK
+	*size = strlen(xio.in_buf)+1;						// size includes the space taken by the termination
 	return(xio.in_buf);
 }
 
@@ -418,7 +425,7 @@ uint8_t xio_get_window_slots() { return xio.slots_free; }
 
 int8_t _get_next_slot(int8_t s, uint8_t state)  // starting on s, return index of first slot with a given state
 {
-	while (s < READLINE_SLOTS) {
+	while (s < RX_WINDOW_SLOTS) {
 		if (xio.slot[s].state == state) return (s);
 		s++;
 	}
@@ -430,7 +437,7 @@ int8_t _get_lowest_seqnum_slot(uint8_t state)	// return slot with lowest non-zer
 	int8_t slot = -1;
 	uint32_t seqnum = MAX_ULONG;
 
-	for (uint8_t s=0; s < READLINE_SLOTS; s++) {
+	for (uint8_t s=0; s < RX_WINDOW_SLOTS; s++) {
 		if ((xio.slot[s].seqnum != 0) && (xio.slot[s].state == state) && (xio.slot[s].seqnum < seqnum)) {
 			seqnum = xio.slot[s].seqnum;
 			slot = s;
@@ -461,7 +468,7 @@ char_t *_return_slot(devflags_t *flags) // return the lowest seq ctrl, then the 
 	*flags = DEV_FLAGS_CLEAR;									// set flags so the caller know what they've got
 
 	xio.slots_free = 0;											// update free slot count
-	for (s=0; s < READLINE_SLOTS; s++) {
+	for (s=0; s < RX_WINDOW_SLOTS; s++) {
 		if (xio.slot[s].state == SLOT_IS_FREE) {
 			xio.slots_free++;
 		}
@@ -494,7 +501,7 @@ static char_t *_readline_window(devflags_t *flags, uint16_t *size)
 	// Look for a partially filled slot if one exists
 	// NB: xio_gets_usart() can return overflowed lines, these are truncated and terminated
 	if ((s = _get_next_slot(0, SLOT_IS_FILLING)) != -1) {
-		if (xio_gets_usart(&ds[XIO_DEV_USB], xio.slot[s].buf, READLINE_SLOT_SIZE) == STAT_EAGAIN) {
+		if (xio_gets_usart(&ds[XIO_DEV_USB], xio.slot[s].buf, RX_WINDOW_SLOT_SIZE) == STAT_EAGAIN) {
 			return (_return_slot(flags));			// no more characters to read. Return an available slot
 		}
 		_mark_slot(s);								// mark the completed line as ctrl or data or reject blank lines
@@ -503,7 +510,7 @@ static char_t *_readline_window(devflags_t *flags, uint16_t *size)
 	// Now fill free slots until you run out of slots or characters
 	s=0;
 	while ((s = _get_next_slot(s, SLOT_IS_FREE)) != -1) {
-		if (xio_gets_usart(&ds[XIO_DEV_USB], xio.slot[s].buf, READLINE_SLOT_SIZE) == STAT_EAGAIN) {
+		if (xio_gets_usart(&ds[XIO_DEV_USB], xio.slot[s].buf, RX_WINDOW_SLOT_SIZE) == STAT_EAGAIN) {
 			xio.slot[s].state = SLOT_IS_FILLING;	// got some characters. Declare the buffer to be filling
 			return (_return_slot(flags));			// no more characters to read. Return an available slot
 		}

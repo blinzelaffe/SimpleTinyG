@@ -93,10 +93,9 @@ enum xioDevNum_t {		// TYPE:	DEVICE:
 #define XIO_DEV_FILE_COUNT		1			// # of FILE devices
 #define XIO_DEV_FILE_OFFSET		(XIO_DEV_USART_COUNT + XIO_DEV_SPI_COUNT) // index into FILES
 
-#define READLINE_SLOTS	16					// number of readline() input buffers (slots)
-#define READLINE_SLOT_SIZE 80				// input buffer length
-
-#define STREAMING_RX_BUFFER_LEN 255			// input buffer for streaming serial mode
+#define RX_WINDOW_SLOTS	16					// number of readline() input buffers (window slots)
+#define RX_WINDOW_SLOT_SIZE 80				// input buffer length
+#define RX_STREAM_BUFFER_LEN 255			// input buffer for streaming serial mode
 
 enum cmSlotState {							// readline() slot states
 	SLOT_IS_FREE = 0,						// slot is available
@@ -201,7 +200,7 @@ typedef void (*x_flow_t)(xioDev_t *d);
 typedef struct windowSlot {				// windowing buffer slots
 	uint8_t state;						// state of slot
 	uint32_t seqnum;					// sequence number of slot
-	char_t buf[READLINE_SLOT_SIZE];		// allocated buffer for slot
+	char_t buf[RX_WINDOW_SLOT_SIZE];	// allocated buffer for slot
 } slot_t;
 
 typedef struct xioSingleton {
@@ -222,13 +221,13 @@ typedef struct xioSingleton {
 
 	// streaming reader
 	uint16_t read_index;				// length of line being read
-	char_t in_buf[STREAMING_RX_BUFFER_LEN];
+	char_t in_buf[RX_STREAM_BUFFER_LEN];
 
 	// sliding window reader
 	uint8_t enable_window_mode;			// set true to enable windowing protocol
 	uint8_t slots_free;
 	uint32_t next_seqnum;
-	slot_t slot[READLINE_SLOTS];
+	slot_t slot[RX_WINDOW_SLOTS];
 
 	magic_t magic_end;
 } xioSingleton_t;
