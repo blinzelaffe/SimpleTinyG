@@ -81,6 +81,7 @@
 #include "tinyg.h"						// needed by init() for default source
 #include "config.h"						// needed by init() for default source
 #include "controller.h"					// needed by init() for default source
+#include "report.h"
 #include "util.h"
 
 static char_t *_readline_window(devflags_t *flags, uint16_t *size);
@@ -332,7 +333,6 @@ char_t *readline(devflags_t *flags, uint16_t *size)
  *	  - Read input line or return NULL pointer if not a completed line
  *	  - Size includes the space taken by the termination
  *	  - Flags are ignored, as the AVR can only read from a single channel
- *	  - Nul lines are trapped and discarded. Discarded chars are added to size to help byte counting
  */
 
 static char_t *_readline_stream(devflags_t *flags, uint16_t *size)
@@ -340,24 +340,25 @@ static char_t *_readline_stream(devflags_t *flags, uint16_t *size)
 	stat_t status;
 
 	status = xio_gets(xio.primary_src, xio.in_buf, sizeof(xio.in_buf));
+
+	// do not have a completed line yet
 	if (status == XIO_EAGAIN) {
 		*size = 0;
 		return ((char_t *)NULL);
 	}
-/*
-		// handle end-of-file from file devices
-		if (status == STAT_EOF) {						// EOF can come from file devices only
-			if (cs.comm_mode == TEXT_MODE) {
-				fprintf_P(stderr, PSTR("End of command file\n"));
-				} else {
-				rpt_exception(STAT_EOF);				// not really an exception
-			}
-			tg_reset_source();							// reset to default source
+
+	// handle end-of-file from file devices
+	if (status == STAT_EOF) {						// EOF can come from file devices only
+		if (cs.comm_mode == TEXT_MODE) {
+			fprintf_P(stderr, PSTR("End of command file\n"));
+		} else {
+			rpt_exception(STAT_EOF);				// not really an exception
 		}
-		return (status);								// Note: STAT_EAGAIN, errors, etc. will drop through
-*/
-	// return if status is XIO_OK
-	*size = strlen(xio.in_buf)+1;						// size includes the space taken by the termination
+		controller_reset_source();					// reset to default source
+	}
+
+	// return the line if status was XIO_OK or XIO_EOF
+	*size = strlen(xio.in_buf)+1;					// size includes the space taken by the termination
 	return(xio.in_buf);
 }
 

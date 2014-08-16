@@ -45,7 +45,7 @@
 /****** REVISIONS ******/
 
 #ifndef TINYG_FIRMWARE_BUILD
-#define TINYG_FIRMWARE_BUILD   		443.02	// checkpoint streaming readline
+#define TINYG_FIRMWARE_BUILD   		443.03	// restructured controller for reading controls before cycles; added PGM device to streaming readline
 
 #endif
 #define TINYG_FIRMWARE_VERSION		0.97						// firmware major version

@@ -220,7 +220,7 @@ typedef struct xioSingleton {
 	uint8_t enable_flow_control;		// enable XON/XOFF or RTS/CTS flow control (shadow setting for XIO cntrl bits)
 
 	// streaming reader
-	uint16_t read_index;				// length of line being read
+	uint8_t size;						// persistent size variable to accumulate nul lines
 	char_t in_buf[RX_STREAM_BUFFER_LEN];
 
 	// sliding window reader
@@ -354,7 +354,7 @@ enum xioSignals {
 #define SYN (char)0x16		// ^v - SYN - Used for queue flush
 #define CAN (char)0x18		// ^x - Cancel, abort
 #define ESC (char)0x1B		// ^[ - ESC(ape)
-//#define SP  (char)0x20		// ' '  Space character		// defined externally
+#define SPC (char)0x20		// ' '  Space character
 #define DEL (char)0x7F		//  DEL(ete)
 
 #define Q_EMPTY (char)0xFF	// signal no character

@@ -115,7 +115,7 @@ stat_t cm_jogging_cycle_start(uint8_t axis)
 
 
 /* Jogging axis moves - these execute in sequence for each axis
- * cm_jogging_callback() 		- main loop callback for running the jogging cycle
+ * cm_jogging_cycle_callback()	- main loop callback for running the jogging cycle
  *	_set_jogging_func()			- a convenience for setting the next dispatch vector and exiting
  *	_jogging_axis_start()		- setup and start
  *	_jogging_axis_jog()			- ramp the jog
@@ -123,7 +123,7 @@ stat_t cm_jogging_cycle_start(uint8_t axis)
  *	_jogging_finalize_exit()	- back off the cleared limit switch
  */
 
-stat_t cm_jogging_callback(void)
+stat_t cm_jogging_cycle_callback(void)
 {
 	if (cm.cycle_state != CYCLE_JOG) { return (STAT_NOOP); } 		// exit if not in a jogging cycle
 	if (cm_get_runtime_busy() == true) { return (STAT_EAGAIN); }	// sync to planner move ends

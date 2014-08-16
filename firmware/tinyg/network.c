@@ -47,12 +47,12 @@
 /*
  * network_init()
  */
-void network_init() 
+void network_init()
 {
 	// re-point IO if in slave mode
 	if (cs.network_mode == NETWORK_SLAVE) {
 		controller_init(XIO_DEV_RS485, XIO_DEV_USB, XIO_DEV_USB);
-		tg_set_secondary_source(XIO_DEV_USB);
+		controller_set_secondary_source(XIO_DEV_USB);
 	}
 	xio_enable_rs485_rx();		// needed for clean start for RS-485;
 }
@@ -62,12 +62,12 @@ void net_forward(unsigned char c)
 	xio_putc(XIO_DEV_RS485, c);	// write to RS485 port
 }
 
-/* 
+/*
  * net_test_rxtx() - test transmission from master to slave
  * net_test_loopback() - test transmission from master to slave and looping back
  */
 
-uint8_t net_test_rxtx(uint8_t c) 
+uint8_t net_test_rxtx(uint8_t c)
 {
 	int d;
 
@@ -95,7 +95,7 @@ uint8_t net_test_loopback(uint8_t c)
 		if ((c < 0x20) || (c >= 0x7F)) { c = 0x20; }
 		c++;
 		xio_putc(XIO_DEV_RS485, c);			// write to RS485 port
-		
+
 		// wait for loopback character
 		while (true) {
 			if ((c = xio_getc(XIO_DEV_RS485)) != _FDEV_ERR) {

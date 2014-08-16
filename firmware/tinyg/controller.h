@@ -90,8 +90,8 @@ stat_t controller_test_assertions(void);
 void controller_run(void);
 //void controller_reset(void);
 
-void tg_reset_source(void);
-void tg_set_primary_source(uint8_t dev);
-void tg_set_secondary_source(uint8_t dev);
+void controller_reset_source(void);
+void controller_set_primary_source(uint8_t dev);
+void controller_set_secondary_source(uint8_t dev);
 
 #endif // End of include guard: CONTROLLER_H_ONCE

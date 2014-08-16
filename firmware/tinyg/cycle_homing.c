@@ -197,7 +197,7 @@ stat_t cm_homing_cycle_start_no_set(void)
 }
 
 /* Homing axis moves - these execute in sequence for each axis
- * cm_homing_callback() 		- main loop callback for running the homing cycle
+ * cm_homing_cycle_callback() 	- main loop callback for running the homing cycle
  *	_set_homing_func()			- a convenience for setting the next dispatch vector and exiting
  *	_trigger_feedhold()			- callback from switch closure to trigger a feedhold (convenience for casting)
  *  _bind_switch_settings()		- setup switch for homing operation
@@ -210,7 +210,7 @@ stat_t cm_homing_cycle_start_no_set(void)
  *	_homing_axis_move()			- helper that actually executes the above moves
  */
 
-stat_t cm_homing_callback(void)
+stat_t cm_homing_cycle_callback(void)
 {
 	if (cm.cycle_state != CYCLE_HOMING) { return (STAT_NOOP);} 	// exit if not in a homing cycle
 	if (cm_get_runtime_busy() == true) { return (STAT_EAGAIN);}	// sync to planner move ends

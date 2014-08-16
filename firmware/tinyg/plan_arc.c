@@ -44,10 +44,10 @@ static float _get_theta(const float x, const float y);
 /*****************************************************************************
  * Canonical Machining arc functions (arc prep for planning and runtime)
  *
- * cm_arc_init()	 - initialize arcs
- * cm_arc_feed() 	 - canonical machine entry point for arc
- * cm_arc_callback() - mail-loop callback for arc generation
- * cm_abort_arc()	 - stop an arc in process
+ * cm_arc_init()			- initialize arcs
+ * cm_arc_feed()			- canonical machine entry point for arc
+ * cm_abort_arc()			- stop an arc in process
+ * cm_arc_cycle_callback()	- main-loop callback for arc generation
  */
 
 /*
@@ -124,15 +124,26 @@ stat_t cm_arc_feed(float target[], float flags[],// arc endpoints
 }
 
 /*
- * cm_arc_callback() - generate an arc
+ * cm_abort_arc() - stop arc movement without maintaining position
  *
- *	cm_arc_callback() is called from the controller main loop. Each time it's called it
+ *	OK to call if no arc is running
+ */
+
+void cm_abort_arc()
+{
+	arc.run_state = MOVE_OFF;
+}
+
+/*
+ * cm_arc_cycle_callback() - generate an arc
+ *
+ *	cm_arc_cycle_callback() is called from the controller main loop. Each time it's called it
  *	queues as many arc segments (lines) as it can before it blocks, then returns.
  *
  *  Parts of this routine were originally sourced from the grbl project.
  */
 
-stat_t cm_arc_callback()
+stat_t cm_arc_cycle_callback()
 {
 	if (arc.run_state == MOVE_OFF) { return (STAT_NOOP);}
 	if (mp_get_planner_buffers_available() < PLANNER_BUFFER_HEADROOM) { return (STAT_EAGAIN);}
@@ -147,17 +158,6 @@ stat_t cm_arc_callback()
 	if (--arc.segment_count > 0) return (STAT_EAGAIN);
 	arc.run_state = MOVE_OFF;
 	return (STAT_OK);
-}
-
-/*
- * cm_abort_arc() - stop arc movement without maintaining position
- *
- *	OK to call if no arc is running
- */
-
-void cm_abort_arc()
-{
-	arc.run_state = MOVE_OFF;
 }
 
 /*
