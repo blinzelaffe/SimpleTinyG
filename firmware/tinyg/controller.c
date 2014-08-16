@@ -205,14 +205,14 @@ static stat_t _controller_state()
 		cm_request_queue_flush();
 		rpt_print_system_ready_message();
 	}
+	return (STAT_OK);
 #endif // __AVR
 
 #ifdef __ARM
 	// detect USB connection and transition to disconnected state if it disconnected
 	//	if (SerialUSB.isConnected() == false) cs.state = CONTROLLER_NOT_CONNECTED;
-	xio_callback();					// manages state changes in the XIO system
+	return (xio_callback());					// manages state changes in the XIO system
 #endif // __ARM
-	return (STAT_OK);
 }
 
 /*****************************************************************************
@@ -225,26 +225,32 @@ static stat_t _controller_state()
  */
 static stat_t _dispatch_command()
 {
-	devflags_t flags = DEV_IS_BOTH;
-
 #ifdef __AVR
+	devflags_t flags = DEV_IS_BOTH;
 	if ((cs.bufp = readline(&flags, &cs.linelen)) != NULL) _dispatch_kernel();
-#endif
-#ifdef __ARM
-	if ((cs.bufp = readline(flags, cs.linelen)) != NULL) _dispatch_kernel();
-#endif
 	return (STAT_OK);
+#endif
+
+#ifdef __ARM
+	devflags_t flags = DEV_IS_BOTH;
+	if ((cs.bufp = readline(flags, cs.linelen)) != NULL) _dispatch_kernel();
+	return (STAT_OK);
+#endif
 }
 
 static stat_t _dispatch_control()
 {
 /*
-	devflags_t flags = DEV_IS_CTRL;
 #ifdef __AVR
+	devflags_t flags = DEV_IS_CTRL;
 	if ((cs.bufp = readline(&flags, &cs.linelen)) != NULL) _dispatch_kernel();
+	return (STAT_OK);
 #endif
+
 #ifdef __ARM
+	devflags_t flags = DEV_IS_CTRL;
 	if ((cs.bufp = readline(flags, cs.linelen)) != NULL) _dispatch_kernel();
+	return (STAT_OK);
 #endif
 */
 	return (STAT_OK);

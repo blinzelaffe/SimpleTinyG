@@ -45,7 +45,7 @@
 /****** REVISIONS ******/
 
 #ifndef TINYG_FIRMWARE_BUILD
-#define TINYG_FIRMWARE_BUILD   		443.03	// restructured controller for reading controls before cycles; added PGM device to streaming readline
+#define TINYG_FIRMWARE_BUILD   		443.05	// testing controller changes - tests OK for self tests and OMC operations
 
 #endif
 #define TINYG_FIRMWARE_VERSION		0.97						// firmware major version
