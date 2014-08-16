@@ -97,12 +97,12 @@ enum xioDevNum_t {		// TYPE:	DEVICE:
 #define RX_WINDOW_SLOT_SIZE 80				// input buffer length
 #define RX_STREAM_BUFFER_LEN 255			// input buffer for streaming serial mode
 
-enum cmSlotState {							// readline() slot states
-	SLOT_IS_FREE = 0,						// slot is available
-	SLOT_IS_FILLING,						// slot is partially loaded
-	SLOT_IS_CTRL,							// slot contains a control line
-	SLOT_IS_DATA,							// slot contains a data line
-	SLOT_IS_PROCESSING						// slot is in use by the caller
+enum cmBufferState {						// readline() buffer and slot states
+	BUFFER_IS_FREE = 0,						// buffer (slot) is available
+	BUFFER_IS_FILLING,						// buffer is partially loaded
+	BUFFER_IS_CTRL,							// buffer contains a control line
+	BUFFER_IS_DATA,							// buffer contains a data line
+	BUFFER_IS_PROCESSING					// buffer is in use by the caller
 };
 
 // Fast accessors
@@ -218,15 +218,16 @@ typedef struct xioSingleton {
 	uint8_t enable_cr;					// enable CR in CRFL expansion on TX (shadow setting for XIO cntrl bits)
 	uint8_t enable_echo;				// enable text-mode echo (shadow setting for XIO cntrl bits)
 	uint8_t enable_flow_control;		// enable XON/XOFF or RTS/CTS flow control (shadow setting for XIO cntrl bits)
+	uint8_t enable_window_mode;			// set true to enable windowing protocol
 
 	// streaming reader
-	uint8_t size;						// persistent size variable to accumulate nul lines
+	uint8_t buf_size;					// persistent size variable
+	uint8_t buf_state;					// holds CTRL or DATA once this is known
 	char_t in_buf[RX_STREAM_BUFFER_LEN];
 
 	// sliding window reader
-	uint8_t enable_window_mode;			// set true to enable windowing protocol
 	uint8_t slots_free;
-	uint32_t next_seqnum;
+	uint32_t next_slot_seqnum;
 	slot_t slot[RX_WINDOW_SLOTS];
 
 	magic_t magic_end;

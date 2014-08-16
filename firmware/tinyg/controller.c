@@ -240,7 +240,6 @@ static stat_t _dispatch_command()
 
 static stat_t _dispatch_control()
 {
-/*
 #ifdef __AVR
 	devflags_t flags = DEV_IS_CTRL;
 	if ((cs.bufp = readline(&flags, &cs.linelen)) != NULL) _dispatch_kernel();
@@ -252,8 +251,6 @@ static stat_t _dispatch_control()
 	if ((cs.bufp = readline(flags, cs.linelen)) != NULL) _dispatch_kernel();
 	return (STAT_OK);
 #endif
-*/
-	return (STAT_OK);
 }
 
 static void _dispatch_kernel()
