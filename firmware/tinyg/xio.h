@@ -121,9 +121,11 @@ typedef uint16_t devflags_t;
 
 // Device state flags
 // channel state
+#define DEV_IS_NONE			(0x0000)		// None of the following
 #define DEV_IS_CTRL			(0x0001)		// device is set as a control channel
 #define DEV_IS_DATA			(0x0002)		// device is set as a data channel
 #define DEV_IS_PRIMARY		(0x0004)		// device is the primary control channel
+#define DEV_IS_BOTH			(DEV_IS_CTRL | DEV_IS_DATA)
 
 // device connection state
 #define DEV_IS_DISCONNECTED	(0x0010)		// device just disconnected (transient state)
@@ -133,10 +135,6 @@ typedef uint16_t devflags_t;
 
 // device exception flags
 #define DEV_THROW_EOF		(0x0100)		// end of file encountered
-
-// device specials
-#define DEV_IS_BOTH			(DEV_IS_CTRL | DEV_IS_DATA)
-#define DEV_FLAGS_CLEAR		(0x0000)		// Apply as flags = DEV_FLAGS_CLEAR;
 
 
 /******************************************************************************

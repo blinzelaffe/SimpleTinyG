@@ -329,78 +329,77 @@ char_t *readline(devflags_t *flags, uint16_t *size)
 /*
  * _readline_stream() - streaming serial reader
  *
- *	Functions:
- *	  - Read input line or return NULL pointer if not a completed line
- *	  - Size includes the space taken by the termination
- *	  - Flags are ignored, as the AVR can only read from a single channel
+ *	Arguments:
+ *	  - Flags request DEV_IS_CTRL, DEV_IS_CTRL, or either (both); returns type detected.
+ *	  - Size is ignored on input, set to line length on return.
+ *	  - Returns pointer to buffer or NULL pointer if no data.
  *
- *	Don't cross the streams. That would be bad. It gets complicated
+ *	Function:
+ *	  - Read active RX device(s). Return an input line or a NULL pointer if no completed line.
+ *		THe *flags arg is set to indicate the type of line returned, and *size is set to
+ *		length of the returned line. The *size returned includes the space taken by the
+ *		terminating CR or LF, so this is one (1) more than a standard strlen().
+ *
+ *		Currently this function does no special handling for doubly terminated lines e.g. CRLF.
+ *		In this case the first termination returns the line; the second returns a null line of *size = 1
+ *
+ *	  - Data Blocking: This function has a special behavior to support sending CTRLs while
+ *		executing cycles. If the flags request ctrl but not data and a data line is read from
+ *		the RX device, the buffer (containing a data line) will not be returned. The buffer
+ *		will be held until a call is made that requests data (may request both DATA and CTRL).
  */
-
-uint16_t _mark_buffer()		// read buffer contents and marks as CTRL or DATA or none
+static char_t *_exit_line(devflags_t flag, devflags_t *flags, uint16_t *size)
 {
-	if (xio.in_buf[0] == NUL) {
-		xio.buf_state = BUFFER_IS_FREE;
-		xio.buf_size = 0;
-		return 0;
-	}
-	if (strchr("{$?!~%Hh", xio.in_buf[0]) != NULL) {// a match indicates control line
-		xio.buf_state = BUFFER_IS_CTRL;
-	} else {
-		xio.buf_state = BUFFER_IS_DATA;
-	}
-	xio.buf_size = strlen(xio.in_buf)+1;			// add 1 to account for the terminating CR or LF
-	return xio.buf_size;
+	*flags = flag;
+	*size = xio.buf_size;
+	return (xio.in_buf);
+}
+
+static char_t *_exit_null(devflags_t *flags, uint16_t *size)
+{
+	*size = 0;
+	*flags = DEV_IS_NONE;
+	return ((char_t *)NULL);
 }
 
 static char_t *_readline_stream(devflags_t *flags, uint16_t *size)
 {
-	*size = 0;		// just set the size to zero. It almost always is.
+	// Handle cases where you are already holding a completed data buffer
+	if (xio.buf_state == BUFFER_IS_DATA) {
+		if (*flags & DEV_IS_DATA) {
+			xio.buf_state = BUFFER_IS_FREE;				// indicates it's OK to start filling this buffer again
+			return (_exit_line(DEV_IS_DATA, flags, size));
+		} else {
+			return(_exit_null(flags, size));
+		}
+	}
+	// Read the input device and process the line
 	stat_t status;
-/*
-	// Free the previous buffer. Indicates that this is a fresh read
-	if (xio.buf_state == BUFFER_IS_PROCESSING) {
-		xio.buf_state = BUFFER_IS_FREE;
+	if ((status = xio_gets(xio.primary_src, xio.in_buf, sizeof(xio.in_buf))) == XIO_EAGAIN) {
+		return(_exit_null(flags, size));
 	}
+	xio.buf_size = strlen(xio.in_buf)+1;				// set size. Add 1 to account for the terminating CR or LF
 
-	// Exit now if the read is for a CTRL only and you have a full data buffer
-	if ((*flags == DEV_IS_CTRL) (xio.buf_state == BUFFER_IS_DATA))  {
-		return ((char_t *)NULL);
-	}
-
-	// Return now if the read is for a CTRL or DATA only and you have a full either
-	if ((*flags == DEV_IS_CTRL) (xio.buf_state == BUFFER_IS_DATA))  {
-		return ((char_t *)NULL);
-	}
-*/
-	status = xio_gets(xio.primary_src, xio.in_buf, sizeof(xio.in_buf));
-
-	// do not have a completed line yet
-	if (status == XIO_EAGAIN) {
-		xio.buf_state = BUFFER_IS_FILLING;
-		return ((char_t *)NULL);
-	}
-
-	// got a full buffer. Mark it CTRL or DATA and set the size.
-	*size = _mark_buffer();
-
-//	if ((xio.buf_state == BUFFER_IS_DATA) && (*flags == DEV_IS_CTRL))  {	// don't return it
-//		return ((char_t *)NULL);
-//	}
-
-	// handle end-of-file from file devices
-	if (status == STAT_EOF) {						// EOF can come from file devices only
+	//*** got a full buffer ***
+	if (status == STAT_EOF) {							// EOF can come from file devices only
 		if (cs.comm_mode == TEXT_MODE) {
 			fprintf_P(stderr, PSTR("End of command file\n"));
 		} else {
-			rpt_exception(STAT_EOF);				// not really an exception
+			rpt_exception(STAT_EOF);					// not really an exception
 		}
-		controller_reset_source();					// reset to default source
+		controller_reset_source();						// reset to active source to default source
 	}
-
-	// return the line if status was XIO_OK or XIO_EOF
-//	*size = strlen(xio.in_buf)+1;					// size includes the space taken by the termination
-	return(xio.in_buf);
+	if (xio.in_buf[0] == NUL) {							// look for lines with no data (nul)
+		return (_exit_line(DEV_IS_NONE, flags, size));
+	}
+	if (strchr("{$?!~%Hh", xio.in_buf[0]) != NULL) {	// a match indicates control line
+		return (_exit_line(DEV_IS_CTRL, flags, size));
+	}
+	if (*flags & DEV_IS_DATA) {							// got a data line
+		return (_exit_line(DEV_IS_DATA, flags, size));	// case where it's OK to return the data line
+	}
+	xio.buf_state = BUFFER_IS_DATA;						// case where it's not OK to return the DATA line
+	return(_exit_null(flags, size));
 }
 
 /*
@@ -507,7 +506,6 @@ void _mark_slot(int8_t s)	// read slot contents. discard nuls, mark as CTRL or D
 char_t *_return_slot(devflags_t *flags) // return the lowest seq ctrl, then the lowest seq data, or NULL
 {
 	int8_t s;
-	*flags = DEV_FLAGS_CLEAR;									// set flags so the caller know what they've got
 
 	xio.slots_free = 0;											// update free slot count
 	for (s=0; s < RX_WINDOW_SLOTS; s++) {
@@ -525,6 +523,7 @@ char_t *_return_slot(devflags_t *flags) // return the lowest seq ctrl, then the 
 		*flags = DEV_IS_DATA;
 		return (xio.slot[s].buf);
 	}
+	*flags = DEV_IS_NONE;										// got no data
 	return ((char_t *)NULL);									// there was no slot to return
 }
 

@@ -45,7 +45,7 @@
 /****** REVISIONS ******/
 
 #ifndef TINYG_FIRMWARE_BUILD
-#define TINYG_FIRMWARE_BUILD   		443.06	// adding read ctrl behaviors; removed checksum from JSON footer
+#define TINYG_FIRMWARE_BUILD   		443.07	// added allowing readline() to read for CTRL only (no data); removed checksum from JSON footer
 
 #endif
 #define TINYG_FIRMWARE_VERSION		0.97						// firmware major version
