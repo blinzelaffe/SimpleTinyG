@@ -613,11 +613,11 @@ static float _get_junction_vmax(const float a_unit[], const float b_unit[])
 static float _compute_next_segment_velocity()
 {
 	if (mr.section == SECTION_BODY) return (mr.segment_velocity);
-#ifdef __JERK_EXEC
-	return (mr.segment_velocity);	// an approximation
-#else
+//#ifdef __JERK_EXEC
+//	return (mr.segment_velocity);	// an approximation
+//#else
 	return (mr.segment_velocity + mr.forward_diff_5);
-#endif
+//#endif
 }
 
 stat_t mp_plan_hold_callback()

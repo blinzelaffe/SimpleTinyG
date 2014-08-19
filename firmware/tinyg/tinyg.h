@@ -45,7 +45,7 @@
 /****** REVISIONS ******/
 
 #ifndef TINYG_FIRMWARE_BUILD
-#define TINYG_FIRMWARE_BUILD   		444.01	// changed $me to accept the number of seconds to enable the motors
+#define TINYG_FIRMWARE_BUILD   		445.01	// removed numerical Jerk calculations (in favor of fwd diffs) and removed Kahan error correction code (not needed)
 
 #endif
 #define TINYG_FIRMWARE_VERSION		0.97						// firmware major version
@@ -58,8 +58,6 @@
 
 #define __STEP_CORRECTION
 //#define __NEW_SWITCHES					// Using v9 style switch code
-//#define __JERK_EXEC						// Use computed jerk (versus forward difference based exec)
-//#define __KAHAN							// Use Kahan summation in aline exec functions
 
 #define __TEXT_MODE							// enables text mode	(~10Kb)
 #define __HELP_SCREENS						// enables help screens (~3.5Kb)
