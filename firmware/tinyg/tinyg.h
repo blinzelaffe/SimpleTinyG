@@ -45,7 +45,7 @@
 /****** REVISIONS ******/
 
 #ifndef TINYG_FIRMWARE_BUILD
-#define TINYG_FIRMWARE_BUILD   		443.07	// added allowing readline() to read for CTRL only (no data); removed checksum from JSON footer
+#define TINYG_FIRMWARE_BUILD   		444.01	// changed $me to accept the number of seconds to enable the motors
 
 #endif
 #define TINYG_FIRMWARE_VERSION		0.97						// firmware major version

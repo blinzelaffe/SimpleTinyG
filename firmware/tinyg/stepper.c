@@ -328,7 +328,7 @@ stat_t st_clc(nvObj_t *nv)	// clear diagnostic counters, reset stepper prep
  * Motor power management functions
  *
  * _deenergize_motor()		 - remove power from a motor
- * _energize_motor()		 - apply power to a motor
+ * _energize_motor()		 - apply power to a motor and start motor timeout
  * _set_motor_power_level()	 - set the actual Vref to a specified power level
  *
  * st_energize_motors()		 - apply power to all motors
@@ -359,7 +359,7 @@ static void _deenergize_motor(const uint8_t motor)
 #endif
 }
 
-static void _energize_motor(const uint8_t motor)
+static void _energize_motor(const uint8_t motor, float timeout_seconds)
 {
 	if (st_cfg.mot[motor].power_mode == MOTOR_DISABLED) {
 		_deenergize_motor(motor);
@@ -383,7 +383,9 @@ static void _energize_motor(const uint8_t motor)
 	if (!motor_5.enable.isNull()) if (motor == MOTOR_5) motor_5.energize(MOTOR_5);
 	if (!motor_6.enable.isNull()) if (motor == MOTOR_6) motor_6.energize(MOTOR_6);
 #endif
-	st_run.mot[motor].power_state = MOTOR_POWER_TIMEOUT_START;
+
+	st_run.mot[motor].power_systick = SysTickTimer_getValue() + (timeout_seconds * 1000);
+	st_run.mot[motor].power_state = MOTOR_POWER_TIMEOUT_COUNTDOWN;
 }
 
 /*
@@ -406,11 +408,11 @@ static void _set_motor_power_level(const uint8_t motor, const float power_level)
 #endif
 }
 
-void st_energize_motors()
+void st_energize_motors(float timeout_seconds)
 {
 	for (uint8_t motor = MOTOR_1; motor < MOTORS; motor++) {
-		_energize_motor(motor);
-		st_run.mot[motor].power_state = MOTOR_POWER_TIMEOUT_START;
+		_energize_motor(motor, timeout_seconds);
+//		st_run.mot[motor].power_state = MOTOR_POWER_TIMEOUT_START;
 	}
 #ifdef __ARM
 	common_enable.clear();			// enable gShield common enable
@@ -436,7 +438,7 @@ stat_t st_motor_power_callback() 	// called by controller
 {
 	// manage power for each motor individually
 	for (uint8_t motor = MOTOR_1; motor < MOTORS; motor++) {
-
+/*
 		if (st_cfg.mot[motor].power_mode == MOTOR_POWERED_IN_CYCLE) {
 			if (st_run.mot[motor].power_state == MOTOR_POWER_TIMEOUT_START) {
 				st_run.mot[motor].power_systick = SysTickTimer_getValue() + (uint32_t)(st_cfg.motor_power_timeout * 1000);
@@ -452,7 +454,7 @@ stat_t st_motor_power_callback() 	// called by controller
 
 		if (st_cfg.mot[motor].power_mode == MOTOR_POWERED_ONLY_WHEN_MOVING) {
 			if (st_run.mot[motor].power_state == MOTOR_POWER_TIMEOUT_START) {
-				st_run.mot[motor].power_systick = SysTickTimer_getValue() + (uint32_t)(MOTOR_TIMEOUT_WHEN_MOVING * 1000);
+				st_run.mot[motor].power_systick = SysTickTimer_getValue() + (uint32_t)(MOTOR_TIMEOUT_SECONDS * 1000);
 				st_run.mot[motor].power_state = MOTOR_POWER_TIMEOUT_COUNTDOWN;
 			}
 			if (st_run.mot[motor].power_state == MOTOR_POWER_TIMEOUT_COUNTDOWN) {
@@ -460,6 +462,24 @@ stat_t st_motor_power_callback() 	// called by controller
 					st_run.mot[motor].power_state = MOTOR_IDLE;
 					_deenergize_motor(motor);
 				}
+			}
+		}
+*/
+		// start timeouts initiated during a load so the loader does not need to burn these cycles 
+		if (st_run.mot[motor].power_state == MOTOR_POWER_TIMEOUT_START) {
+			st_run.mot[motor].power_state = MOTOR_POWER_TIMEOUT_COUNTDOWN;
+			if (st_cfg.mot[motor].power_mode == MOTOR_POWERED_IN_CYCLE) {
+				st_run.mot[motor].power_systick = SysTickTimer_getValue() + (uint32_t)(st_cfg.motor_power_timeout * 1000);
+			} else if (st_cfg.mot[motor].power_mode == MOTOR_POWERED_ONLY_WHEN_MOVING) {
+				st_run.mot[motor].power_systick = SysTickTimer_getValue() + (uint32_t)(MOTOR_TIMEOUT_SECONDS * 1000);
+			}
+		}
+
+		// time out the motor
+		if (st_run.mot[motor].power_state == MOTOR_POWER_TIMEOUT_COUNTDOWN) {
+			if (SysTickTimer_getValue() > st_run.mot[motor].power_systick ) {
+				st_run.mot[motor].power_state = MOTOR_IDLE;
+				_deenergize_motor(motor);
 			}
 		}
 	}
@@ -764,7 +784,6 @@ static void _load_move()
 			// Detect direction change and if so:
 			//	- Set the direction bit in hardware.
 			//	- Compensate for direction change by flipping substep accumulator value about its midpoint.
-
 			if (st_pre.mot[MOTOR_1].direction != st_pre.mot[MOTOR_1].prev_direction) {
 				st_pre.mot[MOTOR_1].prev_direction = st_pre.mot[MOTOR_1].direction;
 				st_run.mot[MOTOR_1].substep_accumulator = -(st_run.dda_ticks_X_substeps + st_run.mot[MOTOR_1].substep_accumulator);
@@ -773,10 +792,10 @@ static void _load_move()
 				PORT_MOTOR_1_VPORT.OUT |= DIRECTION_BIT_bm;
 			}
 
-			// Enable the stepper and start motor power management
-			PORT_MOTOR_1_VPORT.OUT &= ~MOTOR_ENABLE_BIT_bm;				// energize motor
-			st_run.mot[MOTOR_1].power_state = MOTOR_POWER_TIMEOUT_START;// set power management state
-			SET_ENCODER_STEP_SIGN(MOTOR_1, st_pre.mot[MOTOR_1].step_sign);
+			// Finish up the enables
+			PORT_MOTOR_1_VPORT.OUT &= ~MOTOR_ENABLE_BIT_bm;				// enable stepper / energize motor
+			st_run.mot[MOTOR_1].power_state = MOTOR_POWER_TIMEOUT_START;// set power management state in background
+			SET_ENCODER_STEP_SIGN(MOTOR_1, st_pre.mot[MOTOR_1].step_sign);// set encoder
 
 		} else {  // Motor has 0 steps; might need to energize motor for power mode processing
 			if (st_cfg.mot[MOTOR_1].power_mode == MOTOR_POWERED_ONLY_WHEN_MOVING) {
@@ -1178,7 +1197,7 @@ stat_t st_set_pm(nvObj_t *nv)			// motor power mode
 	set_ui8(nv);
 
 	if (fp_ZERO(nv->value)) {			// people asked this setting take effect immediately, hence:
-		_energize_motor(_get_motor(nv->index));
+		_energize_motor(_get_motor(nv->index), st_cfg.motor_power_timeout);
 	} else {
 		_deenergize_motor(_get_motor(nv->index));
 	}
@@ -1229,20 +1248,20 @@ stat_t st_set_mt(nvObj_t *nv)
 
 stat_t st_set_md(nvObj_t *nv)	// Make sure this function is not part of initialization --> f00
 {
-	if (((uint8_t)nv->value == 0) || (nv->valuetype == TYPE_NULL)) {
+//	if (((uint8_t)nv->value == 0) || (nv->valuetype == TYPE_NULL)) {
 		st_deenergize_motors();
-	} else {
-		_deenergize_motor((uint8_t)nv->value-1);
-	}
+//	} else {
+//		_deenergize_motor((uint8_t)nv->value-1);
+//	}
 	return (STAT_OK);
 }
 
 stat_t st_set_me(nvObj_t *nv)	// Make sure this function is not part of initialization --> f00
 {
 	if (((uint8_t)nv->value == 0) || (nv->valuetype == TYPE_NULL)) {
-		st_energize_motors();
+		st_energize_motors(st_cfg.motor_power_timeout);
 	} else {
-		_energize_motor((uint8_t)nv->value-1);
+		st_energize_motors(nv->value);
 	}
 	return (STAT_OK);
 }

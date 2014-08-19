@@ -259,7 +259,7 @@ enum motorPowerState {					// used w/start and stop flags to sequence motor powe
 	MOTOR_IDLE,							// motor is stopped and may be partially energized for torque maintenance
 	MOTOR_RUNNING,						// motor is running (and fully energized)
 	MOTOR_POWER_TIMEOUT_START,			// transitional state to start power-down timeout
-	MOTOR_POWER_TIMEOUT_COUNTDOWN		// count down the time to de-energizing motors
+	MOTOR_POWER_TIMEOUT_COUNTDOWN		// count down the time to de-energizing motor
 };
 
 enum cmMotorPowerMode {
@@ -280,8 +280,8 @@ enum cmMotorPowerMode {
 // Min/Max timeouts allowed for motor disable. Allow for inertial stop; must be non-zero
 #define MOTOR_TIMEOUT_SECONDS_MIN 	(float)0.1		// seconds !!! SHOULD NEVER BE ZERO !!!
 #define MOTOR_TIMEOUT_SECONDS_MAX	(float)4294967	// (4294967295/1000) -- for conversion to uint32_t
-#define MOTOR_TIMEOUT_SECONDS 		(float)0.1		// seconds in DISABLE_AXIS_WHEN_IDLE mode
-#define MOTOR_TIMEOUT_WHEN_MOVING	(float)0.25		// timeout for a motor in _ONLY_WHEN_MOVING mode
+#define MOTOR_TIMEOUT_SECONDS 		(float)0.25		// seconds in DISABLE_AXIS_WHEN_IDLE mode
+//#define MOTOR_TIMEOUT_WHEN_MOVING	(float)0.25		// timeout for a motor in _ONLY_WHEN_MOVING mode
 
 /* DDA substepping
  *	DDA Substepping is a fixed.point scheme to increase the resolution of the DDA pulse generation
@@ -424,7 +424,8 @@ uint8_t st_runtime_isbusy(void);
 void st_reset(void);
 stat_t st_clc(nvObj_t *nv);
 
-void st_energize_motors(void);
+//void st_energize_motors(void);
+void st_energize_motors(float timeout_seconds);
 void st_deenergize_motors(void);
 void st_set_motor_power(const uint8_t motor);
 stat_t st_motor_power_callback(void);
