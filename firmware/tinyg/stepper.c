@@ -60,8 +60,8 @@ static void _set_motor_power_level(const uint8_t motor, const float power_level)
 #ifdef __ARM
 using namespace Motate;
 
-OutputPin<kGRBL_CommonEnablePinNumber> common_enable;	 // shorter form of the above
-OutputPin<kDebug1_PinNumber> dda_debug_pin1;
+OutputPin<kGRBL_CommonEnablePinNumber> common_enable;	// shorter form of the above
+OutputPin<kDebug1_PinNumber> dda_debug_pin1;			// usage: dda_debug_pin1 = 1, dda_debug_pin1 = 0
 OutputPin<kDebug2_PinNumber> dda_debug_pin2;
 OutputPin<kDebug3_PinNumber> dda_debug_pin3;
 
@@ -412,7 +412,6 @@ void st_energize_motors(float timeout_seconds)
 {
 	for (uint8_t motor = MOTOR_1; motor < MOTORS; motor++) {
 		_energize_motor(motor, timeout_seconds);
-//		st_run.mot[motor].power_state = MOTOR_POWER_TIMEOUT_START;
 	}
 #ifdef __ARM
 	common_enable.clear();			// enable gShield common enable
