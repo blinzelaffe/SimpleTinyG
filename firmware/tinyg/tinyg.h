@@ -45,7 +45,7 @@
 /****** REVISIONS ******/
 
 #ifndef TINYG_FIRMWARE_BUILD
-#define TINYG_FIRMWARE_BUILD   		444.01	// changed $me to accept the number of seconds to enable the motors
+#define TINYG_FIRMWARE_BUILD   		445.01	// temporary fix for problem with homing with normally open switches (NO). See notes in _homing_axis_latch()
 
 #endif
 #define TINYG_FIRMWARE_VERSION		0.97						// firmware major version
