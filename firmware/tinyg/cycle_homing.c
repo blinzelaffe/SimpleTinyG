@@ -88,7 +88,7 @@ static stat_t _homing_axis_latch(int8_t axis);
 static stat_t _homing_axis_zero_backoff(int8_t axis);
 static stat_t _homing_axis_set_zero(int8_t axis);
 static stat_t _homing_axis_move(int8_t axis, float target, float velocity);
-static stat_t _homing_abort(int8_t axis);
+//static stat_t _homing_abort(int8_t axis);
 static stat_t _homing_error_exit(int8_t axis, stat_t status);
 static stat_t _homing_finalize_exit(int8_t axis);
 static int8_t _get_next_axis(int8_t axis);
@@ -368,6 +368,13 @@ static stat_t _homing_axis_search(int8_t axis)				// start the search
 
 static stat_t _homing_axis_latch(int8_t axis)				// latch to switch open
 {
+/*	// Removed this code section because if a NO homing switch opens before the
+	// search deceleration is complete the switch will (correctly) be open.
+	// Therefore the homing cycle should continue -- ASH (build 445.01)
+	//
+	// Still need to figure out how to tell the difference between a rapid switch opening
+	// condition (above) and a user- initiated feedhold during a homing operation.
+
 	// verify assumption that we arrived here because of homing switch closure
 	// rather than user-initiated feedhold or other disruption
 #ifndef __NEW_SWITCHES
@@ -377,6 +384,7 @@ static stat_t _homing_axis_latch(int8_t axis)				// latch to switch open
 	if (read_switch(hm.homing_switch_axis, hm.homing_switch_position) != SW_CLOSED)
 		return (_set_homing_func(_homing_abort));
 #endif
+*/
 	_homing_axis_move(axis, hm.latch_backoff, hm.latch_velocity);
 	return (_set_homing_func(_homing_axis_zero_backoff));
 }
@@ -423,7 +431,7 @@ static stat_t _homing_axis_move(int8_t axis, float target, float velocity)
 /*
  * _homing_abort() - end homing cycle in progress
  */
-
+/*
 static stat_t _homing_abort(int8_t axis)
 {
 	cm_set_axis_jerk(axis, hm.saved_jerk);					// restore the max jerk value
@@ -434,7 +442,7 @@ static stat_t _homing_abort(int8_t axis)
 	sr_request_status_report(SR_REQUEST_TIMED_FULL);
 	return (STAT_HOMING_CYCLE_FAILED);						// homing state remains HOMING_NOT_HOMED
 }
-
+*/
 /*
  * _homing_error_exit()
  */

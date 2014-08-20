@@ -45,7 +45,7 @@
 /****** REVISIONS ******/
 
 #ifndef TINYG_FIRMWARE_BUILD
-#define TINYG_FIRMWARE_BUILD   		445.01	// removed numerical Jerk calculations (in favor of fwd diffs) and removed Kahan error correction code (not needed)
+#define TINYG_FIRMWARE_BUILD   		446.01	// quick merge
 
 #endif
 #define TINYG_FIRMWARE_VERSION		0.97						// firmware major version

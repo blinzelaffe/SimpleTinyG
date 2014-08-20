@@ -60,8 +60,8 @@ static void _set_motor_power_level(const uint8_t motor, const float power_level)
 #ifdef __ARM
 using namespace Motate;
 
-OutputPin<kGRBL_CommonEnablePinNumber> common_enable;	 // shorter form of the above
-OutputPin<kDebug1_PinNumber> dda_debug_pin1;
+OutputPin<kGRBL_CommonEnablePinNumber> common_enable;	// shorter form of the above
+OutputPin<kDebug1_PinNumber> dda_debug_pin1;			// usage: dda_debug_pin1 = 1, dda_debug_pin1 = 0
 OutputPin<kDebug2_PinNumber> dda_debug_pin2;
 OutputPin<kDebug3_PinNumber> dda_debug_pin3;
 
@@ -412,7 +412,6 @@ void st_energize_motors(float timeout_seconds)
 {
 	for (uint8_t motor = MOTOR_1; motor < MOTORS; motor++) {
 		_energize_motor(motor, timeout_seconds);
-//		st_run.mot[motor].power_state = MOTOR_POWER_TIMEOUT_START;
 	}
 #ifdef __ARM
 	common_enable.clear();			// enable gShield common enable
@@ -438,34 +437,8 @@ stat_t st_motor_power_callback() 	// called by controller
 {
 	// manage power for each motor individually
 	for (uint8_t motor = MOTOR_1; motor < MOTORS; motor++) {
-/*
-		if (st_cfg.mot[motor].power_mode == MOTOR_POWERED_IN_CYCLE) {
-			if (st_run.mot[motor].power_state == MOTOR_POWER_TIMEOUT_START) {
-				st_run.mot[motor].power_systick = SysTickTimer_getValue() + (uint32_t)(st_cfg.motor_power_timeout * 1000);
-				st_run.mot[motor].power_state = MOTOR_POWER_TIMEOUT_COUNTDOWN;
-			}
-			if (st_run.mot[motor].power_state == MOTOR_POWER_TIMEOUT_COUNTDOWN) {
-				if (SysTickTimer_getValue() > st_run.mot[motor].power_systick ) {
-					st_run.mot[motor].power_state = MOTOR_IDLE;
-					_deenergize_motor(motor);
-				}
-			}
-		}
 
-		if (st_cfg.mot[motor].power_mode == MOTOR_POWERED_ONLY_WHEN_MOVING) {
-			if (st_run.mot[motor].power_state == MOTOR_POWER_TIMEOUT_START) {
-				st_run.mot[motor].power_systick = SysTickTimer_getValue() + (uint32_t)(MOTOR_TIMEOUT_SECONDS * 1000);
-				st_run.mot[motor].power_state = MOTOR_POWER_TIMEOUT_COUNTDOWN;
-			}
-			if (st_run.mot[motor].power_state == MOTOR_POWER_TIMEOUT_COUNTDOWN) {
-				if (SysTickTimer_getValue() > st_run.mot[motor].power_systick ) {
-					st_run.mot[motor].power_state = MOTOR_IDLE;
-					_deenergize_motor(motor);
-				}
-			}
-		}
-*/
-		// start timeouts initiated during a load so the loader does not need to burn these cycles 
+		// start timeouts initiated during a load so the loader does not need to burn these cycles
 		if (st_run.mot[motor].power_state == MOTOR_POWER_TIMEOUT_START) {
 			st_run.mot[motor].power_state = MOTOR_POWER_TIMEOUT_COUNTDOWN;
 			if (st_cfg.mot[motor].power_mode == MOTOR_POWERED_IN_CYCLE) {
@@ -475,7 +448,7 @@ stat_t st_motor_power_callback() 	// called by controller
 			}
 		}
 
-		// time out the motor
+		// count down and time out the motor
 		if (st_run.mot[motor].power_state == MOTOR_POWER_TIMEOUT_COUNTDOWN) {
 			if (SysTickTimer_getValue() > st_run.mot[motor].power_systick ) {
 				st_run.mot[motor].power_state = MOTOR_IDLE;
@@ -1248,11 +1221,7 @@ stat_t st_set_mt(nvObj_t *nv)
 
 stat_t st_set_md(nvObj_t *nv)	// Make sure this function is not part of initialization --> f00
 {
-//	if (((uint8_t)nv->value == 0) || (nv->valuetype == TYPE_NULL)) {
-		st_deenergize_motors();
-//	} else {
-//		_deenergize_motor((uint8_t)nv->value-1);
-//	}
+	st_deenergize_motors();
 	return (STAT_OK);
 }
 
