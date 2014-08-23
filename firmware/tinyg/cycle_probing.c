@@ -182,9 +182,9 @@ static uint8_t _probing_init()
 	pb.saved_switch_mode = sw.mode[pb.probe_switch];
 
 	sw.mode[pb.probe_switch] = SW_MODE_HOMING;
-	pb.saved_switch_type = sw.switch_type;							// save the switch type for recovery later.
-	sw.switch_type = SW_TYPE_NORMALLY_OPEN;							// contact probes are NO switches... usually
-	switch_init();													// re-init to pick up new switch settings
+	pb.saved_switch_type = sw.type;									// save the switch type for recovery later.
+	sw.type = SW_TYPE_NORMALLY_OPEN;								// contact probes are NO switches... usually
+	switch_reset();													// reset switches to pick up new switch settings
 #else // new style switch code:
 	pb.probe_switch_axis = AXIS_Z;									// FIXME: hardcoded...
 	pb.probe_switch_position = SW_MIN;								// FIXME: hardcoded...
@@ -194,7 +194,7 @@ static uint8_t _probing_init()
 
 	pb.saved_switch_type = sw.s[pb.probe_switch_axis][pb.probe_switch_position].type;
 	sw.s[pb.probe_switch_axis][pb.probe_switch_position].type = SW_TYPE_NORMALLY_OPEN; // contact probes are NO switches... usually.
-	switch_init();													// re-init to pick up new switch settings
+	switch_reset();													// reset switches to pick up new switch settings
 #endif
 
 	// probe in absolute machine coords
@@ -271,13 +271,13 @@ static void _probe_restore_settings()
 	mp_flush_planner(); 						// we should be stopped now, but in case of switch closure
 
 #ifndef __NEW_SWITCHES // restore switch settings (old style)
-	sw.switch_type = pb.saved_switch_type;
+	sw.type = pb.saved_switch_type;
 	sw.mode[pb.probe_switch] = pb.saved_switch_mode;
-	switch_init();								// re-init to pick up changes
+	switch_reset();								// reset switches to pick up changes
 #else // restore switch settings (new style)
 	sw.s[pb.probe_switch_axis][pb.probe_switch_position].mode = pb.saved_switch_mode;
 	sw.s[pb.probe_switch_axis][pb.probe_switch_position].type = pb.saved_switch_type;
-	switch_init();								// re-init to pick up changes
+	switch_reset();								// reset switches to pick up changes
 #endif
 
 	// restore axis jerk

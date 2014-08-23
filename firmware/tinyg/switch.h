@@ -41,19 +41,21 @@
 #define SWITCH_H_ONCE
 
 /*
- * Common variables and settings
+ * Generic variables and settings
  */
-											// timer for debouncing switches
-#define SW_LOCKOUT_TICKS 25					// 25=250ms. RTC ticks are ~10ms each
-#define SW_DEGLITCH_TICKS 3					// 3=30ms
+
+// switch array configuration / sizing
+#define SW_PAIRS				HOMING_AXES	// number of axes that can have switches
+#define SW_POSITIONS			2			// swPosition is either SW_MIN or SW)MAX
 
 // switch modes
-#define SW_HOMING_BIT 0x01
-#define SW_LIMIT_BIT 0x02
-#define SW_MODE_DISABLED 		0								// disabled for all operations
-#define SW_MODE_HOMING 			SW_HOMING_BIT					// enable switch for homing only
-#define SW_MODE_LIMIT 			SW_LIMIT_BIT					// enable switch for limits only
-#define SW_MODE_HOMING_LIMIT   (SW_HOMING_BIT | SW_LIMIT_BIT)	// homing and limits
+#define SW_HOMING_BIT			0x01
+#define SW_LIMIT_BIT			0x02
+
+#define SW_MODE_DISABLED 		0							 // disabled for all operations
+#define SW_MODE_HOMING 			SW_HOMING_BIT				 // enable switch for homing only
+#define SW_MODE_LIMIT 			SW_LIMIT_BIT				 // enable switch for limits only
+#define SW_MODE_HOMING_LIMIT   (SW_HOMING_BIT | SW_LIMIT_BIT)// homing and limits
 #define SW_MODE_MAX_VALUE 		SW_MODE_HOMING_LIMIT
 
 enum swType {
@@ -67,12 +69,23 @@ enum swState {
 	SW_CLOSED						// also read as 'true'
 };
 
+enum swPosition {
+	SW_MIN = 0,
+	SW_MAX
+};
+
+enum swEdge {
+	SW_NO_EDGE = 0,
+	SW_LEADING,
+	SW_TRAILING,
+};
+
 /*
  * Defines for old switch handling code
  */
-// macros for finding the index into the switch table give the axis number
-#define MIN_SWITCH(axis) (axis*2)
-#define MAX_SWITCH(axis) (axis*2+1)
+// timer for debouncing switches
+#define SW_LOCKOUT_TICKS		25			// 25=250ms. RTC ticks are ~10ms each
+#define SW_DEGLITCH_TICKS		3			// 3=30ms
 
 enum swDebounce {							// state machine for managing debouncing and lockout
 	SW_IDLE = 0,
@@ -94,24 +107,9 @@ enum swNums {	 			// indexes into switch arrays
 #define SW_OFFSET SW_MAX_X	// offset between MIN and MAX switches
 #define NUM_SWITCH_PAIRS (NUM_SWITCHES/2)
 
-/*
- * Defines for new switch handling code
- */
-
-// switch array configuration / sizing
-#define SW_PAIRS				HOMING_AXES	// number of axes that can have switches
-#define SW_POSITIONS			2			// swPosition is either SW_MIN or SW)MAX
-
-enum swPosition {
-	SW_MIN = 0,
-	SW_MAX
-};
-
-enum swEdge {
-	SW_NO_EDGE = 0,
-	SW_LEADING,
-	SW_TRAILING,
-};
+// macros for finding the index into the switch table give the axis number
+#define MIN_SWITCH(axis) (axis*2)
+#define MAX_SWITCH(axis) (axis*2+1)
 
 /*
  * Interrupt levels and vectors - The vectors are hard-wired to xmega ports
@@ -138,7 +136,7 @@ enum swEdge {
 //		   or normally-closed. "Thrown" means activated or hit.
  */
 struct swStruct {								// switch state
-	uint8_t switch_type;						// 0=NO, 1=NC - applies to all switches
+	uint8_t type;								// 0=NO, 1=NC - applies to all switches
 	uint8_t limit_flag;							// 1=limit switch thrown - do a lockout
 	uint8_t sw_num_thrown;						// number of switch that was just thrown
 	uint8_t state[NUM_SWITCHES];				// 0=OPEN, 1=CLOSED (depends on switch type)
@@ -176,6 +174,7 @@ typedef struct swSwitchArray {					// array of switches
  * Function prototypes
  */
 void switch_init(void);
+void switch_reset(void);
 uint8_t read_switch(uint8_t sw_num);
 uint8_t get_switch_mode(uint8_t sw_num);
 
