@@ -127,7 +127,7 @@ void switch_rtc_callback(void)
 	for (uint8_t i=0; i < NUM_SWITCHES; i++) {
 		if (sw.mode[i] == SW_MODE_DISABLED || sw.debounce[i] == SW_IDLE)
             continue;
-        
+
 		if (++sw.count[i] == SW_LOCKOUT_TICKS) {		// state is either lockout or deglitching
 			sw.debounce[i] = SW_IDLE;
             // check if the state has changed while we were in lockout...
@@ -251,7 +251,7 @@ stat_t sw_set_sw(nvObj_t *nv)			// switch setting
 
 #ifdef __TEXT_MODE
 
-static const char fmt_st[] PROGMEM = "[st]  switch type%18d [0=NO,1=NC]\n";
+static const char fmt_st[] PROGMEM = "[st]  switch type%18.0f [0=NO,1=NC]\n";
 void sw_print_st(nvObj_t *nv) { text_print_ui8(nv, fmt_st);}
 
 //static const char fmt_ss[] PROGMEM = "Switch %s state:     %d\n";
