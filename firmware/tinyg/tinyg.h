@@ -45,7 +45,7 @@
 /****** REVISIONS ******/
 
 #ifndef TINYG_FIRMWARE_BUILD
-#define TINYG_FIRMWARE_BUILD   		446.01	// Staging switch reader group $ss ($ss0-$ss7); corrected display problem qith $st
+#define TINYG_FIRMWARE_BUILD   		446.02	// Staging switch reader group $ss ($ss0-$ss7)
 
 #endif
 #define TINYG_FIRMWARE_VERSION		0.97						// firmware major version

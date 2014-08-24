@@ -177,7 +177,6 @@ uint8_t get_switch_mode(uint8_t sw_num) { return (sw.mode[sw_num]);}
 uint8_t get_limit_switch_thrown(void) { return(sw.limit_flag);}
 uint8_t get_switch_thrown(void) { return(sw.sw_num_thrown);}
 
-
 // global switch type
 void set_switch_type( uint8_t switch_type ) { sw.type = switch_type; }
 uint8_t get_switch_type() { return sw.type; }
@@ -185,9 +184,13 @@ uint8_t get_switch_type() { return sw.type; }
 /*
  * read_switch() - read a switch directly with no interrupts or deglitching
  */
-uint8_t read_switch(uint8_t sw_num)
+int8_t read_switch(uint8_t sw_num)
 {
 	if ((sw_num < 0) || (sw_num >= NUM_SWITCHES)) return (SW_DISABLED);
+
+	if (sw.mode[sw_num] == SW_MODE_DISABLED) {
+		return (SW_DISABLED);
+	}
 
 	uint8_t read = 0;
 	switch (sw_num) {
@@ -201,7 +204,7 @@ uint8_t read_switch(uint8_t sw_num)
 		case SW_MAX_A: { read = hw.sw_port[AXIS_A]->IN & SW_MAX_BIT_bm; break;}
 	}
 	if (sw.type == SW_TYPE_NORMALLY_OPEN) {
-		sw.state[sw_num] = ((read == 0) ? SW_CLOSED : SW_OPEN);// confusing. An NO switch drives the pin LO when thrown
+		sw.state[sw_num] = ((read == 0) ? SW_CLOSED : SW_OPEN);	// confusing. An NO switch drives the pin LO when thrown
 		return (sw.state[sw_num]);
 	} else {
 		sw.state[sw_num] = ((read != 0) ? SW_CLOSED : SW_OPEN);
@@ -245,25 +248,31 @@ stat_t sw_set_sw(nvObj_t *nv)			// switch setting
 	return (STAT_OK);
 }
 
+/*
+ *  sw_get_ss() - get switch state
+ *
+ *	Switches map to:
+ *	  0 = Xmin, 1= Xmax
+ *	  2 = Ymin, 3= Ymax
+ *	  4 = Zmin, 5= Zmax
+ *	  6 = Amin, 7= Amax
+ */
+
+stat_t sw_get_ss(nvObj_t *nv)			// switch number (0-7)
+{
+	if (nv->value >= (SW_PAIRS * SW_POSITIONS)) { return (STAT_INPUT_VALUE_UNSUPPORTED);}
+	uint8_t number = ((uint8_t)nv->token[0] & 0x0F);	// change from ASCII to a number 0-9 (A-F, too)
+	nv->value = (float) read_switch(number);
+	nv->valuetype = TYPE_FLOAT;
+	return (STAT_OK);
+}
+
 /***********************************************************************************
  * TEXT MODE SUPPORT
  * Functions to print variables from the cfgArray table
  ***********************************************************************************/
 
 #ifdef __TEXT_MODE
-
-#ifdef __AVR
-static const char fmt_st[] PROGMEM = "[st]  switch type%18d [0=NO,1=NC]\n";
-#else
-static const char fmt_st[] PROGMEM = "[st]  switch type%18.0f [0=NO,1=NC]\n";
-#endif
-void sw_print_st(nvObj_t *nv) { text_print_ui8(nv, fmt_st);}
-
-//static const char fmt_ss[] PROGMEM = "Switch %s state:     %d\n";
-//void sw_print_ss(nvObj_t *nv) { fprintf(stderr, fmt_ss, nv->token, (uint8_t)nv->value);}
-
-static const char fmt_ss[] PROGMEM = "Switch ss%s state:     %1.0f\n";
-void sw_print_ss(nvObj_t *nv) { fprintf(stderr, fmt_ss, nv->token, nv->value);}
 
 /*
 static const char msg_sw0[] PROGMEM = "Disabled";
@@ -274,5 +283,10 @@ static const char msg_sw4[] PROGMEM = "NC homing & limit";
 static const char *const msg_sw[] PROGMEM = { msg_sw0, msg_sw1, msg_sw2, msg_sw3, msg_sw4 };
 */
 
+static const char fmt_st[] PROGMEM = "[st]  switch type%18.0f [0=NO,1=NC]\n";
+void sw_print_st(nvObj_t *nv) { text_print_flt(nv, fmt_st);}
+
+static const char fmt_ss[] PROGMEM = "Switch ss%s state:     %1.0f\n";
+void sw_print_ss(nvObj_t *nv) { fprintf_P(stderr, fmt_ss, nv->token, nv->value);}
 
 #endif

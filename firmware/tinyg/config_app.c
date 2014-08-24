@@ -475,16 +475,15 @@ const cfgItem_t cfgArray[] PROGMEM = {
 	{ "sys","net", _fipn, 0, cfg_print_net, get_ui8,   set_ui8,    (float *)&cs.network_mode,		NETWORK_MODE },
 
 	// switch state readers
-/*
-	{ "ss","ss0",  _f0, 0, print_ss, get_ui8, set_nul, (float *)&sw.state[0], 0 },
-	{ "ss","ss1",  _f0, 0, print_ss, get_ui8, set_nul, (float *)&sw.state[1], 0 },
-	{ "ss","ss2",  _f0, 0, print_ss, get_ui8, set_nul, (float *)&sw.state[2], 0 },
-	{ "ss","ss3",  _f0, 0, print_ss, get_ui8, set_nul, (float *)&sw.state[3], 0 },
-	{ "ss","ss4",  _f0, 0, print_ss, get_ui8, set_nul, (float *)&sw.state[4], 0 },
-	{ "ss","ss5",  _f0, 0, print_ss, get_ui8, set_nul, (float *)&sw.state[5], 0 },
-	{ "ss","ss6",  _f0, 0, print_ss, get_ui8, set_nul, (float *)&sw.state[6], 0 },
-	{ "ss","ss7",  _f0, 0, print_ss, get_ui8, set_nul, (float *)&sw.state[7], 0 },
-*/
+	{ "ss","ss0", _f0, 0, sw_print_ss, get_ui8, set_nul, (float *)&sw.state[0], 0 },
+	{ "ss","ss1", _f0, 0, sw_print_ss, get_ui8, set_nul, (float *)&sw.state[1], 0 },
+	{ "ss","ss2", _f0, 0, sw_print_ss, get_ui8, set_nul, (float *)&sw.state[2], 0 },
+	{ "ss","ss3", _f0, 0, sw_print_ss, get_ui8, set_nul, (float *)&sw.state[3], 0 },
+	{ "ss","ss4", _f0, 0, sw_print_ss, get_ui8, set_nul, (float *)&sw.state[4], 0 },
+	{ "ss","ss5", _f0, 0, sw_print_ss, get_ui8, set_nul, (float *)&sw.state[5], 0 },
+	{ "ss","ss6", _f0, 0, sw_print_ss, get_ui8, set_nul, (float *)&sw.state[6], 0 },
+	{ "ss","ss7", _f0, 0, sw_print_ss, get_ui8, set_nul, (float *)&sw.state[7], 0 },
+
 	// NOTE: The ordering within the gcode defaults is important for token resolution
 	{ "sys","gpl", _fipn, 0, cm_print_gpl, get_ui8, set_012, (float *)&cm.select_plane,	GCODE_DEFAULT_PLANE },
 	{ "sys","gun", _fipn, 0, cm_print_gun, get_ui8, set_01,  (float *)&cm.units_mode,	GCODE_DEFAULT_UNITS },
@@ -645,7 +644,7 @@ const cfgItem_t cfgArray[] PROGMEM = {
 	{ "","b",  _f0, 0, tx_print_nul, get_grp, set_grp,(float *)&cs.null,0 },
 	{ "","c",  _f0, 0, tx_print_nul, get_grp, set_grp,(float *)&cs.null,0 },
 
-//	{ "","ss", _f0, 0, tx_print_nul, get_grp, set_nul,(float *)&cs.null,0 },	// switch states
+	{ "","ss", _f0, 0, tx_print_nul, get_grp, set_nul,(float *)&cs.null,0 },	// switch states
 	{ "","g54",_f0, 0, tx_print_nul, get_grp, set_grp,(float *)&cs.null,0 },	// coord offset groups
 	{ "","g55",_f0, 0, tx_print_nul, get_grp, set_grp,(float *)&cs.null,0 },
 	{ "","g56",_f0, 0, tx_print_nul, get_grp, set_grp,(float *)&cs.null,0 },
@@ -691,7 +690,7 @@ const cfgItem_t cfgArray[] PROGMEM = {
 /***** Make sure these defines line up with any changes in the above table *****/
 
 #define NV_COUNT_UBER_GROUPS 	4 		// count of uber-groups, above
-#define STANDARD_GROUPS 		32		// count of standard groups, excluding diagnostic parameter groups
+#define STANDARD_GROUPS 		33		// count of standard groups, excluding diagnostic parameter groups
 
 #if (MOTORS >= 5)
 #define MOTOR_GROUP_5			1
@@ -964,7 +963,6 @@ static stat_t set_baud(nvObj_t *nv)
 	uint8_t baud = (uint8_t)nv->value;
 	if ((baud < 1) || (baud > 6)) {
 		nv_add_conditional_message((const char_t *)"*** WARNING *** Unsupported baud rate specified");
-//		nv_add_conditional_message(PSTR("*** WARNING *** Unsupported baud rate specified"));
 		return (STAT_INPUT_VALUE_UNSUPPORTED);
 	}
 	xio.usb_baud_rate = baud;

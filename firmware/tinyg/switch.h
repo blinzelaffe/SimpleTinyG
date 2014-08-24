@@ -139,7 +139,7 @@ struct swStruct {								// switch state
 	uint8_t type;								// 0=NO, 1=NC - applies to all switches
 	uint8_t limit_flag;							// 1=limit switch thrown - do a lockout
 	uint8_t sw_num_thrown;						// number of switch that was just thrown
-	uint8_t state[NUM_SWITCHES];				// 0=OPEN, 1=CLOSED (depends on switch type)
+	int8_t state[NUM_SWITCHES];					// 0=OPEN, 1=CLOSED (depends on switch type), -1=DISABLED
 	volatile uint8_t mode[NUM_SWITCHES];		// 0=disabled, 1=homing, 2=homing+limit, 3=limit
 	volatile uint8_t debounce[NUM_SWITCHES];	// switch debouncer state machine - see swDebounce
 	volatile int8_t count[NUM_SWITCHES];		// deglitching and lockout counter
@@ -152,7 +152,7 @@ typedef struct swSwitch {						// one struct per switch
 	// public
 	uint8_t type;								// swType: 0=NO, 1=NC
 	uint8_t mode;								// 0=disabled, 1=homing, 2=limit, 3=homing+limit
-	uint8_t state;								// set true if switch is closed
+	int8_t state;								// 0=open, 1=closed, -1=disabled
 
 	// private
 	uint8_t edge;								// keeps a transient record of edges for immediate inquiry
@@ -175,7 +175,7 @@ typedef struct swSwitchArray {					// array of switches
  */
 void switch_init(void);
 void switch_reset(void);
-uint8_t read_switch(uint8_t sw_num);
+int8_t read_switch(uint8_t sw_num);
 uint8_t get_switch_mode(uint8_t sw_num);
 
 void switch_rtc_callback(void);
@@ -192,6 +192,8 @@ uint8_t get_switch_type();
  */
 stat_t sw_set_st(nvObj_t *nv);
 stat_t sw_set_sw(nvObj_t *nv);
+stat_t sw_get_ss(nvObj_t *nv);
+void sw_print_ss(nvObj_t *nv);
 
 #ifdef __TEXT_MODE
 	void sw_print_st(nvObj_t *nv);
