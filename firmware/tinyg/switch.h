@@ -135,7 +135,8 @@ enum swNums {	 			// indexes into switch arrays
 // Note 1: The term "thrown" is used because switches could be normally-open
 //		   or normally-closed. "Thrown" means activated or hit.
  */
-struct swStruct {								// switch state
+
+struct swStruct_t {								// switch state
 	uint8_t type;								// 0=NO, 1=NC - applies to all switches
 	uint8_t limit_flag;							// 1=limit switch thrown - do a lockout
 	uint8_t sw_num_thrown;						// number of switch that was just thrown
@@ -143,10 +144,12 @@ struct swStruct {								// switch state
 	volatile uint8_t mode[NUM_SWITCHES];		// 0=disabled, 1=homing, 2=homing+limit, 3=limit
 	volatile uint8_t debounce[NUM_SWITCHES];	// switch debouncer state machine - see swDebounce
 	volatile int8_t count[NUM_SWITCHES];		// deglitching and lockout counter
-};
-struct swStruct sw;
 
-//*** Structures from new-style switch code --- NOT YET FOLDED IN ***//
+
+};
+struct swStruct_t sw1;
+
+// Structures from new-style switch code
 
 typedef struct swSwitch {						// one struct per switch
 	// public
@@ -169,23 +172,31 @@ typedef struct swSwitchArray {					// array of switches
 	uint8_t type;								// switch type for entire array (default)
 	switch_t s[SW_PAIRS][SW_POSITIONS];
 } switches_t;
+extern switches_t sw2;
 
-/****************************************************************************************
+/*
  * Function prototypes
  */
 void switch_init(void);
 void switch_reset(void);
+stat_t poll_switches(void);
+
+
 int8_t read_switch(uint8_t sw_num);
 uint8_t get_switch_mode(uint8_t sw_num);
-
 void switch_rtc_callback(void);
 uint8_t get_limit_switch_thrown(void);
 uint8_t get_switch_thrown(void);
 void reset_switches(void);
 void sw_show_switch(void);
-
 void set_switch_type( uint8_t switch_type );
 uint8_t get_switch_type();
+
+
+int8_t poll_switch(switch_t *s, uint8_t pin_value);
+uint8_t get_switch_mode2(uint8_t axis, uint8_t position);
+uint8_t get_switch_type2(uint8_t axis, uint8_t position);
+int8_t read_switch2(uint8_t axis, uint8_t position);
 
 /*
  * Switch config accessors and text functions

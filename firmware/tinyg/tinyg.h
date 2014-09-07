@@ -45,7 +45,7 @@
 /****** REVISIONS ******/
 
 #ifndef TINYG_FIRMWARE_BUILD
-#define TINYG_FIRMWARE_BUILD   		447.01	// Merging persistence fixes from edge
+#define TINYG_FIRMWARE_BUILD   		448.01	// New switch code
 
 #endif
 #define TINYG_FIRMWARE_VERSION		0.97						// firmware major version
@@ -57,7 +57,7 @@
 /****** COMPILE-TIME SETTINGS ******/
 
 #define __STEP_CORRECTION
-//#define __NEW_SWITCHES					// Using v9 style switch code
+//#define __NEW_SWITCHES					// Using G2 style switch code
 
 #define __TEXT_MODE							// enables text mode	(~10Kb)
 #define __HELP_SCREENS						// enables help screens (~3.5Kb)
