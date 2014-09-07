@@ -72,9 +72,10 @@ struct hmHomingSingleton {			// persistent homing runtime variables
 	uint8_t saved_units_mode;		// G20,G21 global setting
 	uint8_t saved_coord_system;		// G54 - G59 setting
 	uint8_t saved_distance_mode;	// G90,G91 global setting
-	uint8_t saved_feed_rate_mode;   // G93,G94 global setting
+	uint8_t saved_feed_rate_mode;	// G93,G94 global setting
 	float saved_feed_rate;			// F setting
 	float saved_jerk;				// saved and restored for each axis homed
+	float target_position;          // saved prior to initiating moves, for verifying post-move position
 };
 static struct hmHomingSingleton hm;
 
@@ -88,10 +89,11 @@ static stat_t _homing_axis_latch(int8_t axis);
 static stat_t _homing_axis_zero_backoff(int8_t axis);
 static stat_t _homing_axis_set_zero(int8_t axis);
 static stat_t _homing_axis_move(int8_t axis, float target, float velocity);
-//static stat_t _homing_abort(int8_t axis);
 static stat_t _homing_error_exit(int8_t axis, stat_t status);
 static stat_t _homing_finalize_exit(int8_t axis);
 static int8_t _get_next_axis(int8_t axis);
+//static stat_t _homing_abort(int8_t axis);
+
 /*
 static void _homing_debug_print(int8_t axis)
 {
@@ -174,6 +176,7 @@ stat_t cm_homing_cycle_start(void)
 	hm.saved_distance_mode = cm_get_distance_mode(ACTIVE_MODEL);
 	hm.saved_feed_rate_mode = cm_get_feed_rate_mode(ACTIVE_MODEL);
 	hm.saved_feed_rate = cm_get_feed_rate(ACTIVE_MODEL);
+	hm.target_position = 0;
 
 	// set working values
 	cm_set_units_mode(MILLIMETERS);

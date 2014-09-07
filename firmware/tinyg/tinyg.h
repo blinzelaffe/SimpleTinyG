@@ -45,7 +45,7 @@
 /****** REVISIONS ******/
 
 #ifndef TINYG_FIRMWARE_BUILD
-#define TINYG_FIRMWARE_BUILD   		446.02	// Staging switch reader group $ss ($ss0-$ss7)
+#define TINYG_FIRMWARE_BUILD   		447.01	// Merging persistence fixes from edge
 
 #endif
 #define TINYG_FIRMWARE_VERSION		0.97						// firmware major version
