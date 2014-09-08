@@ -45,7 +45,7 @@
 /****** REVISIONS ******/
 
 #ifndef TINYG_FIRMWARE_BUILD
-#define TINYG_FIRMWARE_BUILD   		448.01	// New switch code
+#define TINYG_FIRMWARE_BUILD   		449.01	// Fixed text-mode display of $hom command 
 
 #endif
 #define TINYG_FIRMWARE_VERSION		0.97						// firmware major version
