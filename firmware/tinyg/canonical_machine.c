@@ -152,6 +152,7 @@ uint8_t cm_get_combined_state()
 		if (cm.motion_state == MOTION_RUN) cm.combined_state = COMBINED_RUN;
 		if (cm.motion_state == MOTION_HOLD) cm.combined_state = COMBINED_HOLD;
 	}
+	if (cm.machine_state == MACHINE_ALARM) { cm.combined_state = COMBINED_ALARM;}
 	if (cm.machine_state == MACHINE_SHUTDOWN) { cm.combined_state = COMBINED_SHUTDOWN;}
 
 	return cm.combined_state;
@@ -1295,7 +1296,9 @@ stat_t cm_queue_flush()
 
 static void _exec_program_finalize(float *value, float *flag)
 {
-	cm.machine_state = (uint8_t)value[0];
+	if ((cm.machine_state != MACHINE_ALARM) && (cm.machine_state != MACHINE_SHUTDOWN)) {
+		cm.machine_state = (uint8_t)value[0];
+	}
 	cm_set_motion_state(MOTION_STOP);
 	if (cm.cycle_state == CYCLE_MACHINING) {
 		cm.cycle_state = CYCLE_OFF;						// don't end cycle if homing, probing, etc.
@@ -1306,8 +1309,8 @@ static void _exec_program_finalize(float *value, float *flag)
 
 	// perform the following resets if it's a program END
 	if (cm.machine_state == MACHINE_PROGRAM_END) {
-		cm_reset_origin_offsets();						// G92.1 - we do G91.1 instead of G92.2
-	//	cm_suspend_origin_offsets();					// G92.2 - as per Kramer
+//		cm_reset_origin_offsets();						// G92.1 - we do G91.1 instead of G92.2
+		cm_suspend_origin_offsets();					// G92.2 - as per Kramer
 		cm_set_coord_system(cm.coord_system);			// reset to default coordinate system
 		cm_select_plane(cm.select_plane);				// reset to default arc plane
 		cm_set_distance_mode(cm.distance_mode);

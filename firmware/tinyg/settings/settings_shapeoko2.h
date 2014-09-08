@@ -45,14 +45,14 @@
 
 // *** settings.h overrides ***
 
-#undef COMM_MODE
-#define COMM_MODE				JSON_MODE
-
-//#undef JSON_VERBOSITY
-//#define JSON_VERBOSITY 			JV_VERBOSE
+#undef SOFT_LIMIT_ENABLE
+#define SOFT_LIMIT_ENABLE		1					// 0 = off, 1 = on
 
 #undef SWITCH_TYPE
 #define SWITCH_TYPE 			SW_TYPE_NORMALLY_CLOSED	// one of: SW_TYPE_NORMALLY_OPEN, SW_TYPE_NORMALLY_CLOSED
+
+#undef COMM_MODE
+#define COMM_MODE				JSON_MODE
 
 // *** motor settings ***
 
@@ -139,10 +139,10 @@
 #define Y_ZERO_BACKOFF			3
 
 #define Z_AXIS_MODE				AXIS_STANDARD
-#define Z_VELOCITY_MAX			500
+#define Z_VELOCITY_MAX			800
 #define Z_FEEDRATE_MAX			Z_VELOCITY_MAX
-#define Z_TRAVEL_MAX			95
-#define Z_TRAVEL_MIN			0
+#define Z_TRAVEL_MAX			0
+#define Z_TRAVEL_MIN			-95
 #define Z_JERK_MAX				50					// 50,000,000
 #define Z_JERK_HOMING			1000
 #define Z_JUNCTION_DEVIATION	JUNCTION_DEVIATION
@@ -156,8 +156,8 @@
 #define A_AXIS_MODE				AXIS_STANDARD
 #define A_VELOCITY_MAX			60000
 #define A_FEEDRATE_MAX			48000
-#define A_TRAVEL_MIN			400					// degrees
-#define A_TRAVEL_MAX 			-1					// -1 means infinite, no limit
+#define A_TRAVEL_MIN			-1					// degrees
+#define A_TRAVEL_MAX 			-1					// same value means infinite, no limit
 #define A_JERK_MAX				24000				// yes, 24 billion
 #define A_JERK_HOMING			A_JERK_MAX
 #define A_JUNCTION_DEVIATION	0.1

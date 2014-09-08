@@ -45,7 +45,7 @@
 /****** REVISIONS ******/
 
 #ifndef TINYG_FIRMWARE_BUILD
-#define TINYG_FIRMWARE_BUILD   		449.01	// Fixed text-mode display of $hom command 
+#define TINYG_FIRMWARE_BUILD   		449.02	// Revisions to soft limits  
 
 #endif
 #define TINYG_FIRMWARE_VERSION		0.97						// firmware major version
