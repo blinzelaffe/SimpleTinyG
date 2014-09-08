@@ -460,27 +460,25 @@ void cm_set_model_target(float target[], float flag[])
 /*
  * cm_test_soft_limits() - return error code if soft limit is exceeded
  *
- *	Must be called with target properly set in GM struct. Best done after cm_set_model_target().
+ *	The target[] arg must be in absolute machine coordinates. Best done after cm_set_model_target().
  *
  *	Tests for soft limit for any homed axis if min and max are different values. You can set min
- *	and max to 0,0 to disable soft limits for an axis. Also will not test a min or a max if the
- *	value is < -1000000 (negative one million). This allows a single end to be tested w/the other
- *	disabled, should that requirement ever arise.
+ *	and max to the same value (e.g. 0,0) to disable soft limits for an axis. Also will not test 
+ *	a min or a max if the value is < -1000000 (negative one million). This allows a single end 
+ *	to be tested w/the other disabled, should that requirement ever arise.
  */
 stat_t cm_test_soft_limits(float target[])
 {
 	if (cm.soft_limit_enable == true) {
 		for (uint8_t axis = AXIS_X; axis < AXES; axis++) {
-			if (cm.homed[axis] != true) continue;		// don't test axes that are not homed
-
-			if (fp_EQ(cm.a[axis].travel_min, cm.a[axis].travel_max)) continue;
+			if (cm.homed[axis] != true) continue;								// skip axis if not homed
+			if (fp_EQ(cm.a[axis].travel_min, cm.a[axis].travel_max)) continue;	// skip axis if identical	
 
 			if ((cm.a[axis].travel_min > DISABLE_SOFT_LIMIT) && (target[axis] < cm.a[axis].travel_min)) {
-				return (STAT_SOFT_LIMIT_EXCEEDED);
+				return (STAT_SOFT_LIMIT_EXCEEDED_XMIN + 2*axis);
 			}
-
 			if ((cm.a[axis].travel_max > DISABLE_SOFT_LIMIT) && (target[axis] > cm.a[axis].travel_max)) {
-				return (STAT_SOFT_LIMIT_EXCEEDED);
+				return (STAT_SOFT_LIMIT_EXCEEDED_XMAX + 2*axis);
 			}
 		}
 	}
@@ -827,7 +825,11 @@ stat_t cm_straight_traverse(float target[], float flags[])
 
 	// test soft limits
 	stat_t status = cm_test_soft_limits(cm.gm.target);
-	if (status != STAT_OK) return (cm_soft_alarm(status));
+	if (status != STAT_OK) {
+		cm.gm.motion_mode = MOTION_MODE_CANCEL_MOTION_MODE;
+		copy_vector(cm.gm.target, cm.gmx.position);		// reset model position
+		return (cm_soft_alarm(status));
+	}
 
 	// prep and plan the move
 	cm_set_work_offsets(&cm.gm);				// capture the fully resolved offsets to the state
@@ -941,7 +943,6 @@ stat_t cm_straight_feed(float target[], float flags[])
 {
 	// trap zero feed rate condition
 	if ((cm.gm.feed_rate_mode != INVERSE_TIME_MODE) && (fp_ZERO(cm.gm.feed_rate))) {
-//		return(rpt_exception(STAT_GCODE_FEEDRATE_NOT_SPECIFIED));
 		return (STAT_GCODE_FEEDRATE_NOT_SPECIFIED);
 	}
 	cm.gm.motion_mode = MOTION_MODE_STRAIGHT_FEED;
@@ -949,7 +950,11 @@ stat_t cm_straight_feed(float target[], float flags[])
 
 	// test soft limits
 	stat_t status = cm_test_soft_limits(cm.gm.target);
-	if (status != STAT_OK) return (cm_soft_alarm(status));
+	if (status != STAT_OK) {
+		cm.gm.motion_mode = MOTION_MODE_CANCEL_MOTION_MODE;
+		copy_vector(cm.gm.target, cm.gmx.position);		// reset model position
+		return (cm_soft_alarm(status));
+	}
 
 	// prep and plan the move
 	cm_set_work_offsets(&cm.gm);				// capture the fully resolved offsets to the state

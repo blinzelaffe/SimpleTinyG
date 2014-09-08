@@ -45,7 +45,7 @@
 /****** REVISIONS ******/
 
 #ifndef TINYG_FIRMWARE_BUILD
-#define TINYG_FIRMWARE_BUILD   		449.02	// Revisions to soft limits  
+#define TINYG_FIRMWARE_BUILD   		449.03	// Added soft limits to arcs; more soft limit testing
 
 #endif
 #define TINYG_FIRMWARE_VERSION		0.97						// firmware major version
@@ -540,7 +540,7 @@ char *get_status_message(stat_t status);
 #define	STAT_SOFT_LIMIT_EXCEEDED_BMAX 220				// soft limit error - B maximum
 #define	STAT_SOFT_LIMIT_EXCEEDED_CMIN 231				// soft limit error - C minimum
 #define	STAT_SOFT_LIMIT_EXCEEDED_CMAX 232				// soft limit error - C maximum
-#define	STAT_ERROR_233 233
+#define	STAT_SOFT_LIMIT_EXCEEDED_ARC 233				// soft limit err on arc
 #define	STAT_ERROR_234 234
 #define	STAT_ERROR_235 235
 #define	STAT_ERROR_236 236
