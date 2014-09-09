@@ -45,7 +45,7 @@
 /****** REVISIONS ******/
 
 #ifndef TINYG_FIRMWARE_BUILD
-#define TINYG_FIRMWARE_BUILD   		449.03	// Added soft limits to arcs; more soft limit testing
+#define TINYG_FIRMWARE_BUILD   		449.04	// Soft limit revisions, testing
 
 #endif
 #define TINYG_FIRMWARE_VERSION		0.97						// firmware major version
