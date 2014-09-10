@@ -45,7 +45,7 @@
 /****** REVISIONS ******/
 
 #ifndef TINYG_FIRMWARE_BUILD
-#define TINYG_FIRMWARE_BUILD   		449.04	// Soft limit revisions, testing
+#define TINYG_FIRMWARE_BUILD   		450.01	// Fixed display issue at end of $defa=1 command
 
 #endif
 #define TINYG_FIRMWARE_VERSION		0.97						// firmware major version
