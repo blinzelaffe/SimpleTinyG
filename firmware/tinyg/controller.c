@@ -184,7 +184,7 @@ static void _controller_HSM()
 
 //----- command readers and parsers --------------------------------------------------//
 
-	DISPATCH(_sync_to_planner());				// ensure there is at least one free buffer in planning queue
+	DISPATCH(_sync_to_planner());				// ensure there are enough free buffers in planning queue
 	DISPATCH(_sync_to_tx_buffer());				// sync with TX buffer (pseudo-blocking)
 #ifdef __AVR
 	DISPATCH(set_baud_callback());				// perform baud rate update (must be after TX sync)

@@ -464,8 +464,8 @@ void cm_set_model_target(float target[], float flag[])
  *
  *	Tests for soft limit for any homed axis if min and max are different values. You can set min
  *	and max to the same value (e.g. 0,0) to disable soft limits for an axis. Also will not test 
- *	a min or a max if the value is < -100000 (negative one hundred thousand). This allows a single 
- *	end to be tested w/the other disabled, should that requirement ever arise.
+ *	a min or a max if the value is more than +/- 1000000 (plus or minus 1 million ). 
+ *	This allows a single end to be tested w/the other disabled, should that requirement ever arise.
  */
 
 static stat_t _finalize_soft_limits(stat_t status)
@@ -481,11 +481,13 @@ stat_t cm_test_soft_limits(float target[])
 		for (uint8_t axis = AXIS_X; axis < AXES; axis++) {
 			if (cm.homed[axis] != true) continue;								// skip axis if not homed
 			if (fp_EQ(cm.a[axis].travel_min, cm.a[axis].travel_max)) continue;	// skip axis if identical	
-
-			if ((cm.a[axis].travel_min > DISABLE_SOFT_LIMIT) && (target[axis] < cm.a[axis].travel_min)) {
+			if (fabs(cm.a[axis].travel_min) > DISABLE_SOFT_LIMIT) continue;		// skip axis if disabled
+			if (fabs(cm.a[axis].travel_max) > DISABLE_SOFT_LIMIT) continue;		// skip axis if disabled
+			
+			if (target[axis] < cm.a[axis].travel_min) {
 				return (_finalize_soft_limits(STAT_SOFT_LIMIT_EXCEEDED_XMIN + 2*axis));
 			}
-			if ((cm.a[axis].travel_max > DISABLE_SOFT_LIMIT) && (target[axis] > cm.a[axis].travel_max)) {
+			if (target[axis] > cm.a[axis].travel_max) {
 				return (_finalize_soft_limits(STAT_SOFT_LIMIT_EXCEEDED_XMAX + 2*axis));
 			}
 		}

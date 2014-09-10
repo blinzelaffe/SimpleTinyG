@@ -45,7 +45,7 @@
 /****** REVISIONS ******/
 
 #ifndef TINYG_FIRMWARE_BUILD
-#define TINYG_FIRMWARE_BUILD   		450.01	// Fixed display issue at end of $defa=1 command
+#define TINYG_FIRMWARE_BUILD   		450.02	// Testing some optimizations - intermediate commit
 
 #endif
 #define TINYG_FIRMWARE_VERSION		0.97						// firmware major version

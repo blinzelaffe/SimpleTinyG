@@ -93,15 +93,43 @@ stat_t mp_aline(GCodeState_t *gm_in)
 	float junction_velocity;
 	uint8_t mr_flag = false;
 
-	if (vector_equal(mm.position, gm_in->target)) {	// exit if the move has zero movement. At all.
+	float axis_length[] = { gm_in->target[AXIS_X] - mm.position[AXIS_X], 
+							gm_in->target[AXIS_Y] - mm.position[AXIS_Y],
+							gm_in->target[AXIS_Z] - mm.position[AXIS_Z],
+							gm_in->target[AXIS_A] - mm.position[AXIS_A],
+							gm_in->target[AXIS_B] - mm.position[AXIS_B],
+							gm_in->target[AXIS_C] - mm.position[AXIS_C] };
+
+	// exit if the move has zero movement. At all.
+//	if (vector_equal(mm.position, gm_in->target)) {
+//		sr_request_status_report(SR_REQUEST_IMMEDIATE_FULL);
+//		return (STAT_OK);
+//	}
+/*
+	if ((fp_EQ(mm.position[AXIS_X], gm_in->target[AXIS_X])) && 
+		(fp_EQ(mm.position[AXIS_Y], gm_in->target[AXIS_Y])) && 
+		(fp_EQ(mm.position[AXIS_Z], gm_in->target[AXIS_Z])) &&
+		(fp_EQ(mm.position[AXIS_A], gm_in->target[AXIS_A])) && 
+		(fp_EQ(mm.position[AXIS_B], gm_in->target[AXIS_B])) && 
+		(fp_EQ(mm.position[AXIS_C], gm_in->target[AXIS_C]))) {
 		sr_request_status_report(SR_REQUEST_IMMEDIATE_FULL);
 		return (STAT_OK);
 	}
-	// If _calc_move_times() says the move will take less than the minimum move time
-	// get a more accurate time estimate based on starting velocity and acceleration.
-	// The time of the move is determined by its initial velocity (Vi) and how much
-	// acceleration will be occur. For this we need to look at the exit velocity of
-	// the previous block. There are 3 possible cases:
+*/
+	if ((fp_ZERO(axis_length[AXIS_X])) &&
+		(fp_ZERO(axis_length[AXIS_Y])) &&
+		(fp_ZERO(axis_length[AXIS_Z])) &&
+		(fp_ZERO(axis_length[AXIS_A])) &&
+		(fp_ZERO(axis_length[AXIS_B])) &&
+		(fp_ZERO(axis_length[AXIS_C]))) {
+		sr_request_status_report(SR_REQUEST_IMMEDIATE_FULL);
+		return (STAT_OK);
+	}
+
+	// If _calc_move_times() says the move will take less than the minimum move time get a more 
+	// accurate time estimate based on starting velocity and acceleration. The time of the move 
+	// is determined by its initial velocity (Vi) and how much acceleration will be occur. For 
+	// this we need to look at the exit velocity of the previous block. There are 3 possible cases:
 	//	(1) There is no previous block. Vi = 0
 	//	(2) Previous block is optimally planned. Vi = previous block's exit_velocity
 	//	(3) Previous block is not optimally planned. Vi <= previous block's entry_velocity + delta_velocity
@@ -192,14 +220,14 @@ stat_t mp_aline(GCodeState_t *gm_in)
 
 	float C;					// contribution term. C = T * a
 	float maxC = 0;
-	float axis_length;
+	float axis_len;
 	float recip_L2 = 1/square(bf->length);
 
 	for (uint8_t axis=0; axis<AXES; axis++) {
-		if (fp_NOT_ZERO(axis_length = bf->gm.target[axis] - mm.position[axis])) {
-			bf->unit[axis] = axis_length / bf->length;						// compute unit vector term (zeros are already zero)
-//			C = square(axis_length) * recip_L2 * (1/cm.a[axis].jerk_max);	// squaring axis_length ensures it's positive
-			C = square(axis_length) * recip_L2 * cm.a[axis].recip_jerk;		// squaring axis_length ensures it's positive
+		if (fp_NOT_ZERO(axis_len = bf->gm.target[axis] - mm.position[axis])) {
+			bf->unit[axis] = axis_len / bf->length;							// compute unit vector term (zeros are already zero)
+//			C = square(axis_len) * recip_L2 * (1/cm.a[axis].jerk_max);		// squaring axis_length ensures it's positive
+			C = square(axis_len) * recip_L2 * cm.a[axis].recip_jerk;		// squaring axis_length ensures it's positive
 			if (C > maxC) {
 				maxC = C;
 				bf->jerk_axis = axis;										// also needed for junction vmax calculation
