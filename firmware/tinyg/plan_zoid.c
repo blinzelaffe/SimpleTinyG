@@ -137,7 +137,7 @@ void mp_calculate_trapezoid(mpBuf_t *bf)
 	// In some cases the naiive move time is inf(inite) or NAN. This is OK.
 //	float naiive_move_time = 2 * bf->length / (bf->entry_velocity + bf->exit_velocity);	// real equation
 	float naiive_move_time = bf->length / (bf->entry_velocity + bf->exit_velocity);		// reduced equation
-	
+
 	// F case: Block is too short - run time < minimum segment time
 	// Force block into a single segment body with limited velocities
 	// Accept the entry velocity, limit the cruise, and go for the best exit velocity
@@ -147,8 +147,6 @@ void mp_calculate_trapezoid(mpBuf_t *bf)
 		bf->cruise_velocity = bf->length / MIN_SEGMENT_TIME_PLUS_MARGIN;
 		bf->exit_velocity = max(0.0, min(bf->cruise_velocity, (bf->entry_velocity - bf->delta_vmax)));
 		bf->body_length = bf->length;
-//		bf->head_length = 0;
-//		bf->tail_length = 0;
 		// We are violating the jerk value but since it's a single segment move we don't use it.
 //		printf("0");
 		return;
@@ -166,13 +164,11 @@ void mp_calculate_trapezoid(mpBuf_t *bf)
 			bf->exit_velocity = bf->delta_vmax;
 		}
 		bf->body_length = bf->length;
-//		bf->head_length = 0;
-//		bf->tail_length = 0;
 		// We are violating the jerk value but since it's a single segment move we don't use it.
 //		printf("1");
 		return;
 	}
-	
+
 	// Head-only and tail-only short-line cases
 	//	 H" and T" degraded-fit cases
 	//	 H' and T' requested-fit cases where the body residual is less than MIN_BODY_LENGTH
@@ -187,7 +183,6 @@ void mp_calculate_trapezoid(mpBuf_t *bf)
 			}
 			bf->cruise_velocity = bf->entry_velocity;
 			bf->tail_length = bf->length;
-//			bf->head_length = 0;
 //			printf("2");
 			return;
 		}
@@ -198,7 +193,6 @@ void mp_calculate_trapezoid(mpBuf_t *bf)
 			}
 			bf->cruise_velocity = bf->exit_velocity;
 			bf->head_length = bf->length;
-//			bf->tail_length = 0;
 //			printf("3");
 			return;
 		}
@@ -211,8 +205,6 @@ void mp_calculate_trapezoid(mpBuf_t *bf)
 	if (((bf->cruise_velocity - bf->entry_velocity) < TRAPEZOID_VELOCITY_TOLERANCE) &&
 		((bf->cruise_velocity - bf->exit_velocity) < TRAPEZOID_VELOCITY_TOLERANCE)) {
 		bf->body_length = bf->length;
-//		bf->head_length = 0;
-//		bf->tail_length = 0;
 //		printf("4");
 		return;
 	}

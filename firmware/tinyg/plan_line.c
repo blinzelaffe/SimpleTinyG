@@ -110,11 +110,11 @@ stat_t mp_aline(GCodeState_t *gm_in)
 //		fp_ZERO(axis_length[AXIS_A]) && fp_ZERO(axis_length[AXIS_B]) && fp_ZERO(axis_length[AXIS_C])) {
 		sr_request_status_report(SR_REQUEST_IMMEDIATE_FULL);
 		return (STAT_OK);
-	}	
+	}
 
-	// If _calc_move_times() says the move will take less than the minimum move time get a more 
-	// accurate time estimate based on starting velocity and acceleration. The time of the move 
-	// is determined by its initial velocity (Vi) and how much acceleration will be occur. For 
+	// If _calc_move_times() says the move will take less than the minimum move time get a more
+	// accurate time estimate based on starting velocity and acceleration. The time of the move
+	// is determined by its initial velocity (Vi) and how much acceleration will be occur. For
 	// this we need to look at the exit velocity of the previous block. There are 3 possible cases:
 	//	(1) There is no previous block. Vi = 0
 	//	(2) Previous block is optimally planned. Vi = previous block's exit_velocity

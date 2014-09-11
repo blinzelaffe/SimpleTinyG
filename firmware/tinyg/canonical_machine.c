@@ -483,10 +483,10 @@ stat_t cm_test_soft_limits(float target[])
 	if (cm.soft_limit_enable == true) {
 		for (uint8_t axis = AXIS_X; axis < AXES; axis++) {
 			if (cm.homed[axis] != true) continue;								// skip axis if not homed
-			if (fp_EQ(cm.a[axis].travel_min, cm.a[axis].travel_max)) continue;	// skip axis if identical	
+			if (fp_EQ(cm.a[axis].travel_min, cm.a[axis].travel_max)) continue;	// skip axis if identical
 			if (fabs(cm.a[axis].travel_min) > DISABLE_SOFT_LIMIT) continue;		// skip min test if disabled
 			if (fabs(cm.a[axis].travel_max) > DISABLE_SOFT_LIMIT) continue;		// skip max test if disabled
-			
+
 			if (target[axis] < cm.a[axis].travel_min) {
 				return (_finalize_soft_limits(STAT_SOFT_LIMIT_EXCEEDED_XMIN + 2*axis));
 			}
@@ -612,12 +612,12 @@ stat_t cm_hard_alarm(stat_t status)
 //	gpio_set_bit_off(FLOOD_COOLANT_BIT);	//++++ replace with exec function
 
 	// build an info string and call the exception report
-	char_t info[64];
+	char info[64];
 	if (js.json_syntax == JSON_SYNTAX_RELAXED) {
-		sprintf_P(info, PSTR("n:%d,gc:\"%s\""), (int)cm.gm.linenum, cs.saved_buf);
+		sprintf_P((char *)info, PSTR("n:%d,gc:\"%s\""), (int)cm.gm.linenum, cs.saved_buf);
 	} else {
 	//	sprintf(info, "\"n\":%d,\"gc\":\"%s\"", (int)cm.gm.linenum, cs.saved_buf);	// example
-		sprintf_P(info, PSTR("\"n\":%d,\"gc\":\"%s\""), (int)cm.gm.linenum, cs.saved_buf);		
+		sprintf_P((char *)info, PSTR("\"n\":%d,\"gc\":\"%s\""), (int)cm.gm.linenum, cs.saved_buf);		
 	}
 	rpt_exception(status, info);			// send shutdown message
 
@@ -842,14 +842,12 @@ stat_t cm_resume_origin_offsets()
 
 stat_t cm_straight_traverse(float target[], float flags[])
 {
-	stat_t status;
-
 	cm.gm.motion_mode = MOTION_MODE_STRAIGHT_TRAVERSE;
 	cm_set_model_target(target, flags);
 	ritorno (cm_test_soft_limits(cm.gm.target)); 	// test soft limits; exit if thrown
 	cm_set_work_offsets(&cm.gm);					// capture the fully resolved offsets to the state
 	cm_cycle_start();								// required for homing & other cycles
-	status = mp_aline(&cm.gm);						// send the move to the planner
+	stat_t status = mp_aline(&cm.gm);				// send the move to the planner
 	cm_finalize_move();
 	return (status);
 }
@@ -870,8 +868,8 @@ stat_t cm_set_g28_position(void)
 stat_t cm_goto_g28_position(float target[], float flags[])
 {
 	cm_set_absolute_override(MODEL, true);
-	cm_straight_traverse(target, flags);			// move through intermediate point, or skip
-	while (mp_get_planner_buffers_available() == 0);// make sure you have an available buffer
+	cm_straight_traverse(target, flags);				// move through intermediate point, or skip
+	while (mp_get_planner_buffers_available() == 0);	// make sure you have an available buffer
 	float f[] = {1,1,1,1,1,1};
 	return(cm_straight_traverse(cm.gmx.g28_position, f));// execute actual stored move
 }
@@ -885,8 +883,8 @@ stat_t cm_set_g30_position(void)
 stat_t cm_goto_g30_position(float target[], float flags[])
 {
 	cm_set_absolute_override(MODEL, true);
-	cm_straight_traverse(target, flags);			 // move through intermediate point, or skip
-	while (mp_get_planner_buffers_available() == 0); // make sure you have an available buffer
+	cm_straight_traverse(target, flags);				// move through intermediate point, or skip
+	while (mp_get_planner_buffers_available() == 0);	// make sure you have an available buffer
 	float f[] = {1,1,1,1,1,1};
 	return(cm_straight_traverse(cm.gmx.g30_position, f));// execute actual stored move
 }
@@ -956,8 +954,6 @@ stat_t cm_dwell(float seconds)
  */
 stat_t cm_straight_feed(float target[], float flags[])
 {
-	stat_t status;
-	
 	// trap zero feed rate condition
 	if ((cm.gm.feed_rate_mode != INVERSE_TIME_MODE) && (fp_ZERO(cm.gm.feed_rate))) {
 		return (STAT_GCODE_FEEDRATE_NOT_SPECIFIED);
@@ -967,7 +963,7 @@ stat_t cm_straight_feed(float target[], float flags[])
 	ritorno (cm_test_soft_limits(cm.gm.target)); 	// test soft limits; exit if thrown
 	cm_set_work_offsets(&cm.gm);					// capture the fully resolved offsets to the state
 	cm_cycle_start();								// required for homing & other cycles
-	status = mp_aline(&cm.gm);						// send the move to the planner
+	stat_t status = mp_aline(&cm.gm);				// send the move to the planner
 	cm_finalize_move();
 	return (status);
 }

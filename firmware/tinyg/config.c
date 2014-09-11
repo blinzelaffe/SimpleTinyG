@@ -112,7 +112,6 @@ void config_init()
 #ifdef __ARM
 // ++++ The following code is offered until persistence is implemented.
 // ++++ Then you can use the AVR code (or something like it)
-//	cs.comm_mode = JSON_MODE;					// initial value until EEPROM is read
 	_set_defa(nv);
 #endif
 #ifdef __AVR
@@ -382,19 +381,6 @@ stat_t set_grp(nvObj_t *nv)
 		}
 	}
 	return (STAT_OK);
-}
-
-/*
- * nv_group_is_prefixed() - hack
- *
- *	This little function deals with the exception cases that some groups don't use
- *	the parent token as a prefix to the child elements; SR being a good example.
- */
-uint8_t nv_group_is_prefixed(char_t *group)
-{
-	if (strcmp("sr",group) == 0) return (false);
-	if (strcmp("sys",group) == 0) return (false);
-	return (true);
 }
 
 /***********************************************************************************

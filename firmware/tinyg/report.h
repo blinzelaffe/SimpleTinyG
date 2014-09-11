@@ -87,8 +87,8 @@ typedef struct qrSingleton {		// data for queue reports
 } qrSingleton_t;
 
 typedef struct rxSingleton {
-    uint8_t rx_report_requested;
-    uint16_t space_available;       // space available in usb rx buffer at time of request
+	uint8_t rx_report_requested;
+	uint16_t space_available;		// space available in usb rx buffer at time of request
 } rxSingleton_t;
 
 /**** Externs - See report.c for allocation ****/

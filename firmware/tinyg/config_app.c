@@ -467,12 +467,12 @@ const cfgItem_t cfgArray[] PROGMEM = {
 	{ "sys","si",  _fipn, 0, sr_print_si,  get_int,   sr_set_si,  (float *)&sr.status_report_interval,STATUS_REPORT_INTERVAL_MS },
 //	{ "sys","spi", _fipn, 0, xio_print_spi,get_ui8,   xio_set_spi,(float *)&xio.spi_state,			0 },
 
-	{ "sys","ec",  _fipn, 0, cfg_print_ec,  get_ui8,   set_ec,     (float *)&xio.enable_cr,			COM_EXPAND_CR },
-	{ "sys","ee",  _fipn, 0, cfg_print_ee,  get_ui8,   set_ee,     (float *)&xio.enable_echo,		COM_ENABLE_ECHO },
-	{ "sys","ex",  _fipn, 0, cfg_print_ex,  get_ui8,   set_ex,     (float *)&xio.enable_flow_control,COM_ENABLE_FLOW_CONTROL },
-	{ "sys","ew",  _fipn, 0, cfg_print_ew,  get_ui8,   set_01,     (float *)&xio.enable_window_mode,COM_ENABLE_WINDOW_MODE },
-	{ "sys","baud",_fn,   0, cfg_print_baud,get_ui8,   set_baud,   (float *)&xio.usb_baud_rate,		XIO_BAUD_115200 },
-	{ "sys","net", _fipn, 0, cfg_print_net, get_ui8,   set_ui8,    (float *)&cs.network_mode,		NETWORK_MODE },
+	{ "sys","ec",  _fipn, 0, cfg_print_ec,  get_ui8,   set_ec,    (float *)&xio.enable_cr,			COM_EXPAND_CR },
+	{ "sys","ee",  _fipn, 0, cfg_print_ee,  get_ui8,   set_ee,    (float *)&xio.enable_echo,		COM_ENABLE_ECHO },
+	{ "sys","ex",  _fipn, 0, cfg_print_ex,  get_ui8,   set_ex,    (float *)&xio.enable_flow_control,COM_ENABLE_FLOW_CONTROL },
+	{ "sys","ew",  _fipn, 0, cfg_print_ew,  get_ui8,   set_01,    (float *)&xio.enable_window_mode,COM_ENABLE_WINDOW_MODE },
+	{ "sys","baud",_fn,   0, cfg_print_baud,get_ui8,   set_baud,  (float *)&xio.usb_baud_rate,		XIO_BAUD_115200 },
+	{ "sys","net", _fipn, 0, cfg_print_net, get_ui8,   set_ui8,   (float *)&cs.network_mode,		NETWORK_MODE },
 
 	// switch state readers
 #ifndef __NEW_SWITCHES
@@ -770,6 +770,19 @@ void preprocess_float(nvObj_t *nv)
 	}
 }
 
+/*
+ * nv_group_is_prefixed() - hack
+ *
+ *	This little function deals with the exception cases that some groups don't use
+ *	the parent token as a prefix to the child elements; SR being a good example.
+ */
+uint8_t nv_group_is_prefixed(char_t *group)
+{
+	if (strcmp("sr",group) == 0) return (false);
+	if (strcmp("sys",group) == 0) return (false);
+	return (true);
+}
+
 /**** TinyG UberGroup Operations ****************************************************
  * Uber groups are groups of groups organized for convenience:
  *	- motors		- group of all motor groups
@@ -859,8 +872,8 @@ static stat_t _do_all(nvObj_t *nv)	// print all parameters
  * set_ee() - enable character echo
  * set_ex() - enable XON/XOFF or RTS/CTS flow control
  * set_baud() - set USB baud rate
- * get_rx()	- get bytes available in RX buffer
- * get_sws() - get slots in sliding window buffer
+ * get_rx() - get bytes available in RX buffer
+ * get_wr() - get slots in sliding window buffer
  *
  *	The above assume USB is the std device
  */

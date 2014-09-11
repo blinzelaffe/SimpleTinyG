@@ -57,6 +57,7 @@ rxSingleton_t rx;
  * WARNING: Do not call this function from MED or HI interrupts (LO is OK)
  *			or there is a potential for deadlock in the TX buffer.
  */
+
 stat_t rpt_exception(uint8_t status, char_t *info)
 {
 	if (status != STAT_OK) {	// makes it possible to call exception reports w/o checking status value
@@ -86,7 +87,6 @@ stat_t rpt_exception(uint8_t status, char_t *info)
  */
 stat_t rpt_er(nvObj_t *nv)
 {
-		
 	return(rpt_exception(STAT_GENERIC_EXCEPTION_REPORT, NULL)); // bogus exception report for testing
 }
 
@@ -98,7 +98,6 @@ stat_t rpt_er(nvObj_t *nv)
  *	These messages are always in JSON format to allow UIs to sync
  */
 
-//void _startup_helper(stat_t status, const char_t *msg)
 void _startup_helper(stat_t status, const char *msg)
 {
 #ifndef __SUPPRESS_STARTUP_MESSAGES
@@ -262,6 +261,7 @@ stat_t sr_set_status_report(nvObj_t *nv)
  */
 stat_t sr_request_status_report(uint8_t request_type)
 {
+	// +++ Might require making the FULL requests be sticky, and override previous non-FULL requests
 	if (sr.status_report_request != SR_OFF) return (STAT_OK); // ignore multiple requests. First one wins.
 
 	sr.status_report_systick = SysTickTimer_getValue();
@@ -535,7 +535,11 @@ stat_t qr_queue_report_callback() 		// called by controller dispatcher
  */
 void rx_request_rx_report(void) {
     rx.rx_report_requested = true;
-    rx.space_available = xio_get_usb_rx_free();
+#ifdef __AVR
+	rx.space_available = xio_get_usb_rx_free();
+#else
+	rx.space_available = 254;	// preserves byte counting behaviors for G2 users
+#endif
 }
 
 /*
