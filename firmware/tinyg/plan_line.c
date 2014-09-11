@@ -105,9 +105,9 @@ stat_t mp_aline(GCodeState_t *gm_in)
 	float length = sqrt(length_square);
 
 	// exit if the move has zero movement. At all.
-//	if (fp_ZERO(length)) {
-	if (fp_ZERO(axis_length[AXIS_X]) && fp_ZERO(axis_length[AXIS_Y]) && fp_ZERO(axis_length[AXIS_Z]) &&
-		fp_ZERO(axis_length[AXIS_A]) && fp_ZERO(axis_length[AXIS_B]) && fp_ZERO(axis_length[AXIS_C])) {
+	if (fp_ZERO(length)) {
+//	if (fp_ZERO(axis_length[AXIS_X]) && fp_ZERO(axis_length[AXIS_Y]) && fp_ZERO(axis_length[AXIS_Z]) &&
+//		fp_ZERO(axis_length[AXIS_A]) && fp_ZERO(axis_length[AXIS_B]) && fp_ZERO(axis_length[AXIS_C])) {
 		sr_request_status_report(SR_REQUEST_IMMEDIATE_FULL);
 		return (STAT_OK);
 	}	

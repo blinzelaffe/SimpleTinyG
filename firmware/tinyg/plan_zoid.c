@@ -150,7 +150,7 @@ void mp_calculate_trapezoid(mpBuf_t *bf)
 //		bf->head_length = 0;
 //		bf->tail_length = 0;
 		// We are violating the jerk value but since it's a single segment move we don't use it.
-		printf("0");
+//		printf("0");
 		return;
 	}
 
@@ -169,7 +169,7 @@ void mp_calculate_trapezoid(mpBuf_t *bf)
 //		bf->head_length = 0;
 //		bf->tail_length = 0;
 		// We are violating the jerk value but since it's a single segment move we don't use it.
-		printf("1");
+//		printf("1");
 		return;
 	}
 	
@@ -188,7 +188,7 @@ void mp_calculate_trapezoid(mpBuf_t *bf)
 			bf->cruise_velocity = bf->entry_velocity;
 			bf->tail_length = bf->length;
 //			bf->head_length = 0;
-			printf("2");
+//			printf("2");
 			return;
 		}
 
@@ -199,7 +199,7 @@ void mp_calculate_trapezoid(mpBuf_t *bf)
 			bf->cruise_velocity = bf->exit_velocity;
 			bf->head_length = bf->length;
 //			bf->tail_length = 0;
-			printf("3");
+//			printf("3");
 			return;
 		}
 	}
@@ -213,7 +213,7 @@ void mp_calculate_trapezoid(mpBuf_t *bf)
 		bf->body_length = bf->length;
 //		bf->head_length = 0;
 //		bf->tail_length = 0;
-		printf("4");
+//		printf("4");
 		return;
 	}
 
@@ -244,7 +244,7 @@ void mp_calculate_trapezoid(mpBuf_t *bf)
 				bf->entry_velocity = bf->cruise_velocity;
 				bf->exit_velocity = bf->cruise_velocity;
 			}
-			printf("5");
+//			printf("5");
 			return;
 		}
 
@@ -279,7 +279,7 @@ void mp_calculate_trapezoid(mpBuf_t *bf)
 			bf->head_length = bf->length;			//...or all head
 			bf->tail_length = 0;
 		}
-		printf("6");
+//		printf("6");
 		return;
 	}
 
@@ -307,7 +307,7 @@ void mp_calculate_trapezoid(mpBuf_t *bf)
 	} else if ((fp_ZERO(bf->head_length)) && (fp_ZERO(bf->tail_length))) {
 		bf->cruise_velocity = bf->entry_velocity;
 	}
-	printf("7");
+//	printf("7");
 }
 
 /*
