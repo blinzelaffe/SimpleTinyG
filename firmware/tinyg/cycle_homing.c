@@ -71,8 +71,8 @@ struct hmHomingSingleton {			// persistent homing runtime variables
 	// state saved from gcode model
 	uint8_t saved_units_mode;		// G20,G21 global setting
 	uint8_t saved_coord_system;		// G54 - G59 setting
-	uint8_t saved_distance_mode;	// G90,G91 global setting
-	uint8_t saved_feed_rate_mode;	// G93,G94 global setting
+	uint8_t saved_distance_mode;	// G90, G91 global setting
+	uint8_t saved_feed_rate_mode;	// G93, G94 global setting
 	float saved_feed_rate;			// F setting
 	float saved_jerk;				// saved and restored for each axis homed
 	float target_position;          // saved prior to initiating moves, for verifying post-move position
@@ -202,6 +202,7 @@ stat_t cm_homing_cycle_start_no_set(void)
 /* Homing axis moves - these execute in sequence for each axis
  * cm_homing_cycle_callback() 	- main loop callback for running the homing cycle
  *	_set_homing_func()			- a convenience for setting the next dispatch vector and exiting
+ *  _verify_position()          - checks current position against hm.target_position from last move
  *	_trigger_feedhold()			- callback from switch closure to trigger a feedhold (convenience for casting)
  *  _bind_switch_settings()		- setup switch for homing operation
  *	_restore_switch_settings()	- return switch to normal operation
@@ -349,6 +350,8 @@ static stat_t _homing_axis_clear(int8_t axis)				// first clear move
 		_homing_axis_move(axis, hm.latch_backoff, hm.search_velocity);
 	} else if (sw1.state[hm.limit_switch] == SW_CLOSED) {
 		_homing_axis_move(axis, -hm.latch_backoff, hm.search_velocity);
+	} else { // no move needed, so target position is same as current position
+		hm.target_position = cm_get_absolute_position(MODEL, axis);
 	}
 #else
 	if (read_switch2(hm.homing_switch_axis, hm.homing_switch_position) == SW_CLOSED) {
@@ -403,8 +406,7 @@ static stat_t _homing_axis_set_zero(int8_t axis)			// set zero and finish up
 	if (hm.set_coordinates != false) {
 		cm_set_position(axis, 0);
 		cm.homed[axis] = true;
-	} else {
-        // do not set axis if in G28.4 cycle
+	} else { // do not set axis if in G28.4 cycle
 		cm_set_position(axis, cm_get_work_position(RUNTIME, axis));
 	}
 	cm_set_axis_jerk(axis, hm.saved_jerk);					// restore the max jerk value
@@ -424,7 +426,8 @@ static stat_t _homing_axis_move(int8_t axis, float target, float velocity)
 
 	vect[axis] = target;
 	flags[axis] = true;
-	cm.gm.feed_rate = velocity;
+//	cm.gm.feed_rate = velocity;
+	cm_set_feed_rate(velocity);
 	mp_flush_planner();										// don't use cm_request_queue_flush() here
 	cm_request_cycle_start();
 	ritorno(cm_straight_feed(vect, flags));
@@ -482,10 +485,11 @@ static stat_t _homing_finalize_exit(int8_t axis)			// third part of return to ho
 	cm_set_units_mode(hm.saved_units_mode);
 	cm_set_distance_mode(hm.saved_distance_mode);
 	cm_set_feed_rate_mode(hm.saved_feed_rate_mode);
-	cm.gm.feed_rate = hm.saved_feed_rate;
+//	cm.gm.feed_rate = hm.saved_feed_rate;
+	cm_set_feed_rate(hm.saved_feed_rate);
 	cm_set_motion_mode(MODEL, MOTION_MODE_CANCEL_MOTION_MODE);
 	cm_cycle_end();
-	cm.cycle_state = CYCLE_OFF;
+	cm.cycle_state = CYCLE_OFF;								// required
 	return (STAT_OK);
 }
 
@@ -520,6 +524,7 @@ static int8_t _get_next_axis(int8_t axis)
 //#endif
 //        default:        return -1;
 //    }
+
 	if (axis == -1) {	// inelegant brute force solution
 		if (fp_TRUE(cm.gf.target[AXIS_Z])) return (AXIS_Z);
 		if (fp_TRUE(cm.gf.target[AXIS_X])) return (AXIS_X);
