@@ -336,7 +336,6 @@ static stat_t _homing_axis_start(int8_t axis)
 	}
 #endif
 
-//	hm.saved_jerk = cm.a[axis].jerk_max;					// save the max jerk value
 	hm.saved_jerk = cm_get_axis_jerk(axis);					// save the max jerk value
 	return (_set_homing_func(_homing_axis_clear));			// start the clear
 }
@@ -426,7 +425,6 @@ static stat_t _homing_axis_move(int8_t axis, float target, float velocity)
 
 	vect[axis] = target;
 	flags[axis] = true;
-//	cm.gm.feed_rate = velocity;
 	cm_set_feed_rate(velocity);
 	mp_flush_planner();										// don't use cm_request_queue_flush() here
 	cm_request_cycle_start();
@@ -485,7 +483,6 @@ static stat_t _homing_finalize_exit(int8_t axis)			// third part of return to ho
 	cm_set_units_mode(hm.saved_units_mode);
 	cm_set_distance_mode(hm.saved_distance_mode);
 	cm_set_feed_rate_mode(hm.saved_feed_rate_mode);
-//	cm.gm.feed_rate = hm.saved_feed_rate;
 	cm_set_feed_rate(hm.saved_feed_rate);
 	cm_set_motion_mode(MODEL, MOTION_MODE_CANCEL_MOTION_MODE);
 	cm_cycle_end();
@@ -509,22 +506,23 @@ static stat_t _homing_finalize_exit(int8_t axis)			// third part of return to ho
 static int8_t _get_next_axis(int8_t axis)
 {
 #if (HOMING_AXES <= 4)
-//    uint8_t axis;
-//    for(axis = AXIS_X; axis < HOMING_AXES; axis++)
-//        if(fp_TRUE(cm.gf.target[axis])) break;
-//    if(axis >= HOMING_AXES) return -2;
-//    switch(axis) {
-//        case -1:        if (fp_TRUE(cm.gf.target[AXIS_Z])) return (AXIS_Z);
-//        case AXIS_Z:    if (fp_TRUE(cm.gf.target[AXIS_X])) return (AXIS_X);
-//        case AXIS_X:    if (fp_TRUE(cm.gf.target[AXIS_Y])) return (AXIS_Y);
-//        case AXIS_Y:    if (fp_TRUE(cm.gf.target[AXIS_A])) return (AXIS_A);
-//#if (HOMING_AXES > 4)
-//        case AXIS_A:    if (fp_TRUE(cm.gf.target[AXIS_B])) return (AXIS_B);
-//        case AXIS_B:    if (fp_True(cm.gf.target[AXIS_C])) return (AXIS_C);
-//#endif
-//        default:        return -1;
-//    }
-
+/* alternate code:
+	uint8_t axis;
+	for(axis = AXIS_X; axis < HOMING_AXES; axis++)
+		if(fp_TRUE(cm.gf.target[axis])) break;
+	if(axis >= HOMING_AXES) return -2;
+	  switch(axis) {
+		case -1:        if (fp_TRUE(cm.gf.target[AXIS_Z])) return (AXIS_Z);
+		case AXIS_Z:    if (fp_TRUE(cm.gf.target[AXIS_X])) return (AXIS_X);
+		case AXIS_X:    if (fp_TRUE(cm.gf.target[AXIS_Y])) return (AXIS_Y);
+		case AXIS_Y:    if (fp_TRUE(cm.gf.target[AXIS_A])) return (AXIS_A);
+#if (HOMING_AXES > 4)
+		case AXIS_A:    if (fp_TRUE(cm.gf.target[AXIS_B])) return (AXIS_B);
+		case AXIS_B:    if (fp_True(cm.gf.target[AXIS_C])) return (AXIS_C);
+#endif
+		default:        return -1;
+	}
+*/
 	if (axis == -1) {	// inelegant brute force solution
 		if (fp_TRUE(cm.gf.target[AXIS_Z])) return (AXIS_Z);
 		if (fp_TRUE(cm.gf.target[AXIS_X])) return (AXIS_X);
@@ -544,7 +542,6 @@ static int8_t _get_next_axis(int8_t axis)
 	return (-1);	// done
 
 #else
-
 	if (axis == -1) {
 		if (fp_TRUE(cm.gf.target[AXIS_Z])) return (AXIS_Z);
 		if (fp_TRUE(cm.gf.target[AXIS_X])) return (AXIS_X);

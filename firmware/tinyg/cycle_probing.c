@@ -46,7 +46,7 @@ struct pbProbingSingleton {						// persistent probing runtime variables
 #ifndef __NEW_SWITCHES
 	uint8_t probe_switch;						// which switch should we check?
 	uint8_t saved_switch_type;					// saved switch type NO/NC
-	uint8_t saved_switch_mode;	                // save the probe switch's original settings
+	uint8_t saved_switch_mode[NUM_SWITCHES];	// save the probe switch's original settings
 #else
 	uint8_t probe_switch_axis;					// which axis should we check?
 	uint8_t probe_switch_position;				//...and position
@@ -98,12 +98,13 @@ uint8_t _set_pb_func(uint8_t (*func)())
  *	Note: When coding a cycle (like this one) you get to perform one queued move per
  *	entry into the continuation, then you must exit.
  *
- *	Another Note: When coding a cycle (like this one) you must wait until
- *	the last move has actually been queued (or has finished) before declaring
- *	the cycle to be done. Otherwise there is a nasty race condition in the
- *	tg_controller() that will accept the next command before the position of
- *	the final move has been recorded in the Gcode model. That's what the call
- *	to cm_get_runtime_busy() is about.
+ *	Another Note: When coding a cycle (like this one) you must wait until the last move
+ *	has actually been queued (or has finished) before declaring the cycle to be done.
+ *	Otherwise there is a nasty race condition in the tg_controller() that will accept
+ *	the next command before the position of the final move has been recorded in the
+ *	Gcode model. That's what the call to cm_get_runtime_busy() is about.
+ *
+ *  ESTEE: is this still true???   ASH: Yes.
  */
 
 uint8_t cm_straight_probe(float target[], float flags[])
