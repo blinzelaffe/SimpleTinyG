@@ -47,29 +47,57 @@ rxSingleton_t rx;
  *
  * Returns incoming status value
  *
+ * You can add additional info in the info string. Be sure it obeys strict JSON parsing
+ * Pass info as NULL to skip this.
+ *
  * WARNING: Do not call this function from MED or HI interrupts (LO is OK)
  *			or there is a potential for deadlock in the TX buffer.
  */
+stat_t rpt_exception(uint8_t status, char_t *info)
+{
+	if (status != STAT_OK) {	// makes it possible to call exception reports w/o checking status value
+		if (info != NULL) {
+			if (js.json_syntax == JSON_SYNTAX_RELAXED) {
+				printf_P(PSTR("{er:{fb:%0.2f,st:%d,msg:\"%s\",%s}}\n"),
+					TINYG_FIRMWARE_BUILD, status, get_status_message(status), info);
+			} else {
+				printf_P(PSTR("{\"er\":{\"fb\":%0.2f,\"st\":%d,\"msg\":\"%s\",%s}}\n"),
+					TINYG_FIRMWARE_BUILD, status, get_status_message(status), info);
+			}
+		} else {
+			if (js.json_syntax == JSON_SYNTAX_RELAXED) {
+				printf_P(PSTR("{er:{fb:%0.2f,st:%d,msg:\"%s\"}}\n"),
+				TINYG_FIRMWARE_BUILD, status, get_status_message(status));
+				} else {
+				printf_P(PSTR("{\"er\":{\"fb\":%0.2f,\"st\":%d,\"msg\":\"%s\"}}\n"),
+				TINYG_FIRMWARE_BUILD, status, get_status_message(status));
+			}			
+		}
+	}
+	return (status);			// makes it possible to inline, e.g: return(rpt_exception(status));
+}
+/*
 stat_t rpt_exception(uint8_t status)
 {
 	if (status != STAT_OK) {	// makes it possible to call exception reports w/o checking status value
 		if (js.json_syntax == JSON_SYNTAX_RELAXED) {
 			printf_P(PSTR("{er:{fb:%0.2f,st:%d,msg:\"%s\"}}\n"),
-				TINYG_FIRMWARE_BUILD, status, get_status_message(status));
-		} else {
+			TINYG_FIRMWARE_BUILD, status, get_status_message(status));
+			} else {
 			printf_P(PSTR("{\"er\":{\"fb\":%0.2f,\"st\":%d,\"msg\":\"%s\"}}\n"),
-				TINYG_FIRMWARE_BUILD, status, get_status_message(status));
+			TINYG_FIRMWARE_BUILD, status, get_status_message(status));
 		}
 	}
 	return (status);			// makes it possible to inline, e.g: return(rpt_exception(status));
 }
 
+*/
 /*
  * rpt_er()	- send a bogus exception report for testing purposes (it's not real)
  */
 stat_t rpt_er(nvObj_t *nv)
 {
-	return(rpt_exception(STAT_GENERIC_EXCEPTION_REPORT)); // bogus exception report for testing
+	return(rpt_exception(STAT_GENERIC_EXCEPTION_REPORT, NULL)); // bogus exception report for testing
 }
 
 /**** Application Messages *********************************************************
@@ -186,7 +214,7 @@ void sr_init_status_report()
 		sr.status_report_value[i] = -1234567;				// pre-load values with an unlikely number
 		nv->value = nv_get_index((const char_t *)"", sr_defaults[i]);// load the index for the SR element
 		if (fp_EQ(nv->value, NO_MATCH)) {
-			rpt_exception(STAT_BAD_STATUS_REPORT_SETTING);	// trap mis-configured profile settings
+			rpt_exception(STAT_BAD_STATUS_REPORT_SETTING, NULL); // trap mis-configured profile settings
 			return;
 		}
 		if (_is_stat(nv) == true)

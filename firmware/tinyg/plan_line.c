@@ -142,7 +142,7 @@ stat_t mp_aline(GCodeState_t *gm_in)
 	// get a cleared buffer and setup move variables
 	if ((bf = mp_get_write_buffer()) == NULL) {							// never supposed to fail
 //		printf("{er:{\"n\":%d,\"gc\":\"%s\"}}\n", (int)cm.gm.linenum, cs.saved_buf);
-		printf_P(PSTR("{er:{\"n\":%d,\"gc\":\"%s\"}}\n"), (int)cm.gm.linenum, cs.saved_buf);
+//		printf_P(PSTR("{er:{\"n\":%d,\"gc\":\"%s\"}}\n"), (int)cm.gm.linenum, cs.saved_buf);
 		return(cm_hard_alarm(STAT_BUFFER_FULL_FATAL));
 	}
 	bf->bf_func = mp_exec_aline;										// register the callback to the exec function

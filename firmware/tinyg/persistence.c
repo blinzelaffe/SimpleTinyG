@@ -111,7 +111,7 @@ stat_t write_persistent_value(nvObj_t *nv)
 */
 stat_t write_persistent_value(nvObj_t *nv)
 {
-	if (cm.cycle_state != CYCLE_OFF) return(rpt_exception(STAT_FILE_NOT_OPEN));	// can't write when machine is moving
+	if (cm.cycle_state != CYCLE_OFF) return(rpt_exception(STAT_FILE_NOT_OPEN, NULL));	// can't write when machine is moving
 /* not needed
 	if (nv->valuetype == TYPE_FLOAT) {
 		if (isnan((double)nv->value)) return(rpt_exception(STAT_FLOAT_IS_NAN));		// bad floating point value
