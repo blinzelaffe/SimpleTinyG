@@ -45,7 +45,7 @@
 /****** REVISIONS ******/
 
 #ifndef TINYG_FIRMWARE_BUILD
-#define TINYG_FIRMWARE_BUILD   		450.06	// Added info string to exception reports; changed default JSON syntax to RELAXED
+#define TINYG_FIRMWARE_BUILD   		450.07	// More work on extending exception reports
 
 #endif
 #define TINYG_FIRMWARE_VERSION		0.97						// firmware major version

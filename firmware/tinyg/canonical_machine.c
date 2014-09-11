@@ -91,6 +91,7 @@
 #include "text_parser.h"
 #include "canonical_machine.h"
 #include "controller.h"
+#include "json_parser.h"
 #include "plan_arc.h"
 #include "planner.h"
 #include "stepper.h"
@@ -598,8 +599,6 @@ stat_t cm_clear(nvObj_t *nv)				// clear soft alarm
 
 stat_t cm_hard_alarm(stat_t status)
 {
-	char_t info[64];
-	 
 	// stop the motors and the spindle
 	stepper_init();							// hard stop
 	cm_spindle_control(SPINDLE_OFF);
@@ -611,10 +610,16 @@ stat_t cm_hard_alarm(stat_t status)
 //	gpio_set_bit_off(MIST_COOLANT_BIT);		//++++ replace with exec function
 //	gpio_set_bit_off(FLOOD_COOLANT_BIT);	//++++ replace with exec function
 
-	sprintf(info, "n\":%d,\"gc\":\"%s\"", (int)cm.gm.linenum, cs.saved_buf);
-//	printf_P(PSTR("{er:{\"n\":%d,\"gc\":\"%s\"}}\n"), (int)cm.gm.linenum, cs.saved_buf);
-
+	// build an info string and call the exception report
+	char_t info[64];
+	if (js.json_syntax == JSON_SYNTAX_RELAXED) {
+		sprintf_P(info, PSTR("n:%d,gc:\"%s\""), (int)cm.gm.linenum, cs.saved_buf);
+	} else {
+	//	sprintf(info, "\"n\":%d,\"gc\":\"%s\"", (int)cm.gm.linenum, cs.saved_buf);	// example
+		sprintf_P(info, PSTR("\"n\":%d,\"gc\":\"%s\""), (int)cm.gm.linenum, cs.saved_buf);		
+	}
 	rpt_exception(status, info);			// send shutdown message
+
 	cm.machine_state = MACHINE_SHUTDOWN;
 	return (status);
 }
