@@ -762,7 +762,7 @@ stat_t cm_set_xjh(nvObj_t *nv);			// set jerk homing with 1,000,000 correction
 	#define cm_print_mots tx_print_stub
 	#define cm_print_hold tx_print_stub
 	#define cm_print_home tx_print_stub
-	#define cm_print_hom tx_print_stub	
+	#define cm_print_hom tx_print_stub
 	#define cm_print_unit tx_print_stub
 	#define cm_print_coor tx_print_stub
 	#define cm_print_momo tx_print_stub
