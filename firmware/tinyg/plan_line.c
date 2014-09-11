@@ -97,19 +97,18 @@ stat_t mp_aline(GCodeState_t *gm_in)
 	float axis_length[AXES];
 	float axis_square[AXES];
 	float length_square = 0;
-	float length;
-	uint8_t axis_nonzero[] = {false, false, false, false, false, false};
 
 	for (uint8_t axis=0; axis<AXES; axis++) {
 		axis_length[axis] = gm_in->target[axis] - mm.position[axis];
 		axis_square[axis] = square(axis_length[axis]);
 		length_square += axis_square[axis];
-		if (fp_NOT_ZERO(axis_length[axis])) axis_nonzero[axis] = true;
 	}
-	length = sqrt(length_square);
+	float length = sqrt(length_square);
 
 	// exit if the move has zero movement. At all.
-	if (fp_ZERO(length)) {
+//	if (fp_ZERO(length)) {
+	if (fp_ZERO(axis_length[AXIS_X]) && fp_ZERO(axis_length[AXIS_Y]) && fp_ZERO(axis_length[AXIS_Z]) &&
+		fp_ZERO(axis_length[AXIS_A]) && fp_ZERO(axis_length[AXIS_B]) && fp_ZERO(axis_length[AXIS_C])) {
 		sr_request_status_report(SR_REQUEST_IMMEDIATE_FULL);
 		return (STAT_OK);
 	}	
@@ -141,7 +140,11 @@ stat_t mp_aline(GCodeState_t *gm_in)
 	}
 
 	// get a cleared buffer and setup move variables
-	if ((bf = mp_get_write_buffer()) == NULL) return(cm_hard_alarm(STAT_BUFFER_FULL_FATAL)); // never supposed to fail
+	if ((bf = mp_get_write_buffer()) == NULL) {							// never supposed to fail
+//		printf("{er:{\"n\":%d,\"gc\":\"%s\"}}\n", (int)cm.gm.linenum, cs.saved_buf);
+		printf_P(PSTR("{er:{\"n\":%d,\"gc\":\"%s\"}}\n"), (int)cm.gm.linenum, cs.saved_buf);
+		return(cm_hard_alarm(STAT_BUFFER_FULL_FATAL));
+	}
 	bf->bf_func = mp_exec_aline;										// register the callback to the exec function
 	bf->length = length;
 	memcpy(&bf->gm, gm_in, sizeof(GCodeState_t));						// copy model state into planner buffer
@@ -207,20 +210,17 @@ stat_t mp_aline(GCodeState_t *gm_in)
 
 	float C;					// contribution term. C = T * a
 	float maxC = 0;
-	float axis_len;
-//	float recip_L2 = 1/square(bf->length);
 	float recip_L2 = 1/length_square;
 
 	for (uint8_t axis=0; axis<AXES; axis++) {
-		if (axis_nonzero[axis]) {
-			bf->unit[axis] = axis_length[axis] / bf->length;				// compute unit vector term (zeros are already zero)
-			C = axis_square[axis] * recip_L2 * cm.a[axis].recip_jerk;		// squaring axis_length ensures it's positive
+		if (fp_NOT_ZERO(axis_length[axis])) {
+			bf->unit[axis] = axis_length[axis] / bf->length;			// compute unit vector term (zeros are already zero)
+			C = axis_square[axis] * recip_L2 * cm.a[axis].recip_jerk;	// squaring axis_length ensures it's positive
 			if (C > maxC) {
 				maxC = C;
-				bf->jerk_axis = axis;										// also needed for junction vmax calculation
+				bf->jerk_axis = axis;									// also needed for junction vmax calculation
 			}
 		}
-
 	}
 	// set up and pre-compute the jerk terms needed for this round of planning
 //	bf->jerk = cm.a[bf->jerk_axis].recip_jerk * fabs(bf->unit[bf->jerk_axis]);// scale the jerk
@@ -552,18 +552,18 @@ static float _get_junction_vmax(const float a_unit[], const float b_unit[])
 
 	// Fuse the junction deviations into a vector sum
 	float a_delta = square(a_unit[AXIS_X] * cm.a[AXIS_X].junction_dev);
-	a_delta += square(a_unit[AXIS_Y] * cm.a[AXIS_Y].junction_dev);
-	a_delta += square(a_unit[AXIS_Z] * cm.a[AXIS_Z].junction_dev);
-	a_delta += square(a_unit[AXIS_A] * cm.a[AXIS_A].junction_dev);
-	a_delta += square(a_unit[AXIS_B] * cm.a[AXIS_B].junction_dev);
-	a_delta += square(a_unit[AXIS_C] * cm.a[AXIS_C].junction_dev);
+		 a_delta += square(a_unit[AXIS_Y] * cm.a[AXIS_Y].junction_dev);
+		 a_delta += square(a_unit[AXIS_Z] * cm.a[AXIS_Z].junction_dev);
+		 a_delta += square(a_unit[AXIS_A] * cm.a[AXIS_A].junction_dev);
+		 a_delta += square(a_unit[AXIS_B] * cm.a[AXIS_B].junction_dev);
+		 a_delta += square(a_unit[AXIS_C] * cm.a[AXIS_C].junction_dev);
 
 	float b_delta = square(b_unit[AXIS_X] * cm.a[AXIS_X].junction_dev);
-	b_delta += square(b_unit[AXIS_Y] * cm.a[AXIS_Y].junction_dev);
-	b_delta += square(b_unit[AXIS_Z] * cm.a[AXIS_Z].junction_dev);
-	b_delta += square(b_unit[AXIS_A] * cm.a[AXIS_A].junction_dev);
-	b_delta += square(b_unit[AXIS_B] * cm.a[AXIS_B].junction_dev);
-	b_delta += square(b_unit[AXIS_C] * cm.a[AXIS_C].junction_dev);
+		 b_delta += square(b_unit[AXIS_Y] * cm.a[AXIS_Y].junction_dev);
+		 b_delta += square(b_unit[AXIS_Z] * cm.a[AXIS_Z].junction_dev);
+		 b_delta += square(b_unit[AXIS_A] * cm.a[AXIS_A].junction_dev);
+		 b_delta += square(b_unit[AXIS_B] * cm.a[AXIS_B].junction_dev);
+		 b_delta += square(b_unit[AXIS_C] * cm.a[AXIS_C].junction_dev);
 
 	float delta = (sqrt(a_delta) + sqrt(b_delta))/2;
 	float sintheta_over2 = sqrt((1 - costheta)/2);
@@ -630,11 +630,7 @@ static float _get_junction_vmax(const float a_unit[], const float b_unit[])
 static float _compute_next_segment_velocity()
 {
 	if (mr.section == SECTION_BODY) return (mr.segment_velocity);
-//#ifdef __JERK_EXEC
-//	return (mr.segment_velocity);	// an approximation
-//#else
 	return (mr.segment_velocity + mr.forward_diff_5);
-//#endif
 }
 
 stat_t mp_plan_hold_callback()
@@ -651,8 +647,8 @@ stat_t mp_plan_hold_callback()
 
 	// examine and process mr buffer
 	mr_available_length = get_axis_vector_length(mr.target, mr.position);
-
-/*	mr_available_length =
+/*
+	mr_available_length =
 		(sqrt(square(mr.endpoint[AXIS_X] - mr.position[AXIS_X]) +
 			  square(mr.endpoint[AXIS_Y] - mr.position[AXIS_Y]) +
 			  square(mr.endpoint[AXIS_Z] - mr.position[AXIS_Z]) +
@@ -660,7 +656,6 @@ stat_t mp_plan_hold_callback()
 			  square(mr.endpoint[AXIS_B] - mr.position[AXIS_B]) +
 			  square(mr.endpoint[AXIS_C] - mr.position[AXIS_C])));
 */
-
 	// compute next_segment velocity
 //	braking_velocity = mr.segment_velocity;
 //	if (mr.section != SECTION_BODY) { braking_velocity += mr.forward_diff_1;}

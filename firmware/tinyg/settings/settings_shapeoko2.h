@@ -40,7 +40,7 @@
 // ***> NOTE: The init message must be a single line with no CRs or LFs
 #define INIT_MESSAGE "Initializing configs to Shapeoko2 500mm profile"
 
-#define JUNCTION_DEVIATION		0.05	// default value, in mm - larger is faster
+#define JUNCTION_DEVIATION		0.10	// default value, in mm - larger is faster
 #define JUNCTION_ACCELERATION	1000000	// centripetal acceleration around corners
 
 // *** settings.h overrides ***
@@ -116,8 +116,8 @@
 #define X_JERK_MAX				8000				// xjm		yes, that's "5 billion" mm/(min^3)
 #define X_JERK_HOMING			10000				// xjh
 #define X_JUNCTION_DEVIATION	JUNCTION_DEVIATION	// xjd
-#define X_SWITCH_MODE_MIN		SW_MODE_HOMING		// xsn		SW_MODE_DISABLED, SW_MODE_HOMING, SW_MODE_LIMIT, SW_MODE_HOMING_LIMIT
-#define X_SWITCH_MODE_MAX 		SW_MODE_DISABLED	// xsx		SW_MODE_DISABLED, SW_MODE_HOMING, SW_MODE_LIMIT, SW_MODE_HOMING_LIMIT
+#define X_SWITCH_MODE_MIN		SW_MODE_HOMING_LIMIT// xsn		SW_MODE_DISABLED, SW_MODE_HOMING, SW_MODE_LIMIT, SW_MODE_HOMING_LIMIT
+#define X_SWITCH_MODE_MAX 		SW_MODE_LIMIT		// xsx		SW_MODE_DISABLED, SW_MODE_HOMING, SW_MODE_LIMIT, SW_MODE_HOMING_LIMIT
 #define X_SEARCH_VELOCITY		3000				// xsv		minus means move to minimum switch
 #define X_LATCH_VELOCITY		100					// xlv		mm/min
 #define X_LATCH_BACKOFF			20					// xlb		mm
@@ -131,8 +131,8 @@
 #define Y_JERK_MAX				5000
 #define Y_JERK_HOMING			10000
 #define Y_JUNCTION_DEVIATION	JUNCTION_DEVIATION
-#define Y_SWITCH_MODE_MIN		SW_MODE_HOMING
-#define Y_SWITCH_MODE_MAX		SW_MODE_DISABLED
+#define Y_SWITCH_MODE_MIN		SW_MODE_HOMING_LIMIT
+#define Y_SWITCH_MODE_MAX		SW_MODE_LIMIT
 #define Y_SEARCH_VELOCITY		3000
 #define Y_LATCH_VELOCITY		100
 #define Y_LATCH_BACKOFF			20
@@ -145,9 +145,9 @@
 #define Z_TRAVEL_MIN			-95
 #define Z_JERK_MAX				500
 #define Z_JERK_HOMING			1000
-#define Z_JUNCTION_DEVIATION	JUNCTION_DEVIATION
+#define Z_JUNCTION_DEVIATION	0.05
 #define Z_SWITCH_MODE_MIN		SW_MODE_DISABLED
-#define Z_SWITCH_MODE_MAX		SW_MODE_HOMING
+#define Z_SWITCH_MODE_MAX		SW_MODE_HOMING_LIMIT
 #define Z_SEARCH_VELOCITY		Z_VELOCITY_MAX
 #define Z_LATCH_VELOCITY		100
 #define Z_LATCH_BACKOFF			10
