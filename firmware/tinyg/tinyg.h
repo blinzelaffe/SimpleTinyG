@@ -45,7 +45,7 @@
 /****** REVISIONS ******/
 
 #ifndef TINYG_FIRMWARE_BUILD
-#define TINYG_FIRMWARE_BUILD   		450.10	// Changes back-ported from G2 build 071.xx - homing
+#define TINYG_FIRMWARE_BUILD   		450.11	// Testing changes back-ported from G2 build 071.xx
 
 #endif
 #define TINYG_FIRMWARE_VERSION		0.97						// firmware major version

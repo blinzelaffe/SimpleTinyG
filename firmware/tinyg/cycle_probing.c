@@ -43,13 +43,13 @@ struct pbProbingSingleton {						// persistent probing runtime variables
 	stat_t (*func)();							// binding for callback function state machine
 
 	// switch configuration
-#ifndef __NEW_SWITCHES
-	uint8_t probe_switch;						// which switch should we check?
+#ifdef __NEW_SWITCHES
+	uint8_t probe_switch_axis;					// which axis should we check?
+	uint8_t probe_switch_position;				//...and position
 	uint8_t saved_switch_type;					// saved switch type NO/NC
 	uint8_t saved_switch_mode[NUM_SWITCHES];	// save the probe switch's original settings
 #else
-	uint8_t probe_switch_axis;					// which axis should we check?
-	uint8_t probe_switch_position;				//...and position
+	uint8_t probe_switch;						// which switch should we check?
 	uint8_t saved_switch_type;					// saved switch type NO/NC
 	uint8_t saved_switch_mode;					// save the probe switch's original settings
 #endif
