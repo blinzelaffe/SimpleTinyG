@@ -34,12 +34,6 @@
 #define NVM_BASE_ADDR 0x0000		// base address of usable NVM
 
 //**** persistence singleton ****
-/*
-typedef struct nvmSingleton {
-	uint16_t nvm_base_addr;			// NVM base address
-	uint16_t nvm_profile_base;		// NVM base address of current profile
-} nvmSingleton_t;
-*/
 
 typedef struct nvmSingleton {
 	uint16_t base_addr;					// NVM base address
@@ -48,6 +42,7 @@ typedef struct nvmSingleton {
 	float tmp_value;
 	int8_t byte_array[NVM_VALUE_LEN];
 } nvmSingleton_t;
+
 //**** persistence function prototypes ****
 
 void persistence_init(void);

@@ -145,8 +145,8 @@ void cm_abort_arc()
 /*
  * cm_arc_cycle_callback() - generate an arc
  *
- *	cm_arc_cycle_callback() is called from the controller main loop. Each time it's called it
- *	queues as many arc segments (lines) as it can before it blocks, then returns.
+ *	cm_arc_cycle_callback() is called from the controller main loop. Each time it's called
+ *	it queues as many arc segments (lines) as it can before it blocks, then returns.
  *
  *  Parts of this routine were originally sourced from the grbl project.
  */

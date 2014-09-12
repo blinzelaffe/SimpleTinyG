@@ -612,12 +612,12 @@ stat_t cm_hard_alarm(stat_t status)
 //	gpio_set_bit_off(FLOOD_COOLANT_BIT);	//++++ replace with exec function
 
 	// build an info string and call the exception report
-	char info[64];
+	char_t info[64];
 	if (js.json_syntax == JSON_SYNTAX_RELAXED) {
 		sprintf_P((char *)info, PSTR("n:%d,gc:\"%s\""), (int)cm.gm.linenum, cs.saved_buf);
 	} else {
 	//	sprintf(info, "\"n\":%d,\"gc\":\"%s\"", (int)cm.gm.linenum, cs.saved_buf);	// example
-		sprintf_P((char *)info, PSTR("\"n\":%d,\"gc\":\"%s\""), (int)cm.gm.linenum, cs.saved_buf);		
+		sprintf_P((char *)info, PSTR("\"n\":%d,\"gc\":\"%s\""), (int)cm.gm.linenum, cs.saved_buf);
 	}
 	rpt_exception(status, info);			// send shutdown message
 
