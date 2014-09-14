@@ -43,6 +43,12 @@ static stat_t _exec_aline_segment(void);
 
 static void _init_forward_diffs(float Vi, float Vt);
 
+/*
+using namespace Motate;
+OutputPin<kDebug1_PinNumber> exec_debug_pin1;
+OutputPin<kDebug2_PinNumber> exec_debug_pin2;
+*/
+
 /*************************************************************************
  * mp_exec_move() - execute runtime functions to prep move for steppers
  *

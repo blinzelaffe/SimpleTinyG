@@ -87,8 +87,8 @@ typedef struct qrSingleton {		// data for queue reports
 } qrSingleton_t;
 
 typedef struct rxSingleton {
-    uint8_t rx_report_requested;
-    uint16_t space_available;       // space available in usb rx buffer at time of request
+	uint8_t rx_report_requested;
+	uint16_t space_available;		// space available in usb rx buffer at time of request
 } rxSingleton_t;
 
 /**** Externs - See report.c for allocation ****/
@@ -100,7 +100,7 @@ extern rxSingleton_t rx;
 /**** Function Prototypes ****/
 
 void rpt_print_message(char *msg);
-stat_t rpt_exception(uint8_t status);
+stat_t rpt_exception(uint8_t status, char_t *info);
 
 stat_t rpt_er(nvObj_t *nv);
 void rpt_print_loading_configs_message(void);

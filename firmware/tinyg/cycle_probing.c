@@ -43,13 +43,13 @@ struct pbProbingSingleton {						// persistent probing runtime variables
 	stat_t (*func)();							// binding for callback function state machine
 
 	// switch configuration
-#ifndef __NEW_SWITCHES
-	uint8_t probe_switch;						// which switch should we check?
-	uint8_t saved_switch_type;					// saved switch type NO/NC
-	uint8_t saved_switch_mode;	                // save the probe switch's original settings
-#else
+#ifdef __NEW_SWITCHES
 	uint8_t probe_switch_axis;					// which axis should we check?
 	uint8_t probe_switch_position;				//...and position
+	uint8_t saved_switch_type;					// saved switch type NO/NC
+	uint8_t saved_switch_mode[NUM_SWITCHES];	// save the probe switch's original settings
+#else
+	uint8_t probe_switch;						// which switch should we check?
 	uint8_t saved_switch_type;					// saved switch type NO/NC
 	uint8_t saved_switch_mode;					// save the probe switch's original settings
 #endif
@@ -98,12 +98,13 @@ uint8_t _set_pb_func(uint8_t (*func)())
  *	Note: When coding a cycle (like this one) you get to perform one queued move per
  *	entry into the continuation, then you must exit.
  *
- *	Another Note: When coding a cycle (like this one) you must wait until
- *	the last move has actually been queued (or has finished) before declaring
- *	the cycle to be done. Otherwise there is a nasty race condition in the
- *	tg_controller() that will accept the next command before the position of
- *	the final move has been recorded in the Gcode model. That's what the call
- *	to cm_get_runtime_busy() is about.
+ *	Another Note: When coding a cycle (like this one) you must wait until the last move
+ *	has actually been queued (or has finished) before declaring the cycle to be done.
+ *	Otherwise there is a nasty race condition in the tg_controller() that will accept
+ *	the next command before the position of the final move has been recorded in the
+ *	Gcode model. That's what the call to cm_get_runtime_busy() is about.
+ *
+ *  ESTEE: is this still true???   ASH: Yes.
  */
 
 uint8_t cm_straight_probe(float target[], float flags[])
@@ -179,21 +180,21 @@ static uint8_t _probing_init()
 
 #ifndef __NEW_SWITCHES	// old style switch code:
 	pb.probe_switch = SW_MIN_Z;										// FIXME: hardcoded...
-	pb.saved_switch_mode = sw.mode[pb.probe_switch];
+	pb.saved_switch_mode = sw1.mode[pb.probe_switch];
 
-	sw.mode[pb.probe_switch] = SW_MODE_HOMING;
-	pb.saved_switch_type = sw.type;									// save the switch type for recovery later.
-	sw.type = SW_TYPE_NORMALLY_OPEN;								// contact probes are NO switches... usually
+	sw1.mode[pb.probe_switch] = SW_MODE_HOMING;
+	pb.saved_switch_type = sw1.type;									// save the switch type for recovery later.
+	sw1.type = SW_TYPE_NORMALLY_OPEN;								// contact probes are NO switches... usually
 	switch_reset();													// reset switches to pick up new switch settings
 #else // new style switch code:
 	pb.probe_switch_axis = AXIS_Z;									// FIXME: hardcoded...
 	pb.probe_switch_position = SW_MIN;								// FIXME: hardcoded...
 
-	pb.saved_switch_mode = sw.s[pb.probe_switch_axis][pb.probe_switch_position].mode;
-	sw.s[pb.probe_switch_axis][pb.probe_switch_position].mode = SW_MODE_HOMING;
+	pb.saved_switch_mode = sw2.s[pb.probe_switch_axis][pb.probe_switch_position].mode;
+	sw2.s[pb.probe_switch_axis][pb.probe_switch_position].mode = SW_MODE_HOMING;
 
-	pb.saved_switch_type = sw.s[pb.probe_switch_axis][pb.probe_switch_position].type;
-	sw.s[pb.probe_switch_axis][pb.probe_switch_position].type = SW_TYPE_NORMALLY_OPEN; // contact probes are NO switches... usually.
+	pb.saved_switch_type = sw2.s[pb.probe_switch_axis][pb.probe_switch_position].type;
+	sw2.s[pb.probe_switch_axis][pb.probe_switch_position].type = SW_TYPE_NORMALLY_OPEN; // contact probes are NO switches... usually.
 	switch_reset();													// reset switches to pick up new switch settings
 #endif
 
@@ -215,9 +216,9 @@ static stat_t _probing_start()
 {
 	// initial probe state, don't probe if we're already contacted!
 #ifndef __NEW_SWITCHES
-	int8_t probe = sw.state[pb.probe_switch];
+	int8_t probe = sw1.state[pb.probe_switch];
 #else
-	int8_t probe = read_switch(pb.probe_switch_axis, pb.probe_switch_position);
+	int8_t probe = read_switch2(pb.probe_switch_axis, pb.probe_switch_position);
 #endif
 
     if( probe==SW_OPEN ) {
@@ -233,9 +234,9 @@ static stat_t _probing_start()
 static stat_t _probing_finish()
 {
 #ifndef __NEW_SWITCHES
-	int8_t probe = sw.state[pb.probe_switch];
+	int8_t probe = sw1.state[pb.probe_switch];
 #else
-	int8_t probe = read_switch(pb.probe_switch_axis, pb.probe_switch_position);
+	int8_t probe = read_switch2(pb.probe_switch_axis, pb.probe_switch_position);
 #endif
 	cm.probe_state = (probe==SW_CLOSED) ? PROBE_SUCCEEDED : PROBE_FAILED;
 
@@ -271,12 +272,12 @@ static void _probe_restore_settings()
 	mp_flush_planner(); 						// we should be stopped now, but in case of switch closure
 
 #ifndef __NEW_SWITCHES // restore switch settings (old style)
-	sw.type = pb.saved_switch_type;
-	sw.mode[pb.probe_switch] = pb.saved_switch_mode;
+	sw1.type = pb.saved_switch_type;
+	sw1.mode[pb.probe_switch] = pb.saved_switch_mode;
 	switch_reset();								// reset switches to pick up changes
 #else // restore switch settings (new style)
-	sw.s[pb.probe_switch_axis][pb.probe_switch_position].mode = pb.saved_switch_mode;
-	sw.s[pb.probe_switch_axis][pb.probe_switch_position].type = pb.saved_switch_type;
+	sw2.s[pb.probe_switch_axis][pb.probe_switch_position].mode = pb.saved_switch_mode;
+	sw2.s[pb.probe_switch_axis][pb.probe_switch_position].type = pb.saved_switch_type;
 	switch_reset();								// reset switches to pick up changes
 #endif
 

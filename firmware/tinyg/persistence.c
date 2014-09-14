@@ -70,6 +70,12 @@ stat_t read_persistent_value(nvObj_t *nv)
 	nvm.address = nvm.profile_base + (nv->index * NVM_VALUE_LEN);
 	(void)EEPROM_ReadBytes(nvm.address, nvm.byte_array, NVM_VALUE_LEN);
 	memcpy(&nv->value, &nvm.byte_array, NVM_VALUE_LEN);
+
+//	int8_t nvm_byte_array[NVM_VALUE_LEN];
+//	uint16_t nvm_address = nvm.profile_base + (nv->index * NVM_VALUE_LEN);
+//	(void)EEPROM_ReadBytes(nvm_address, nvm_byte_array, NVM_VALUE_LEN);
+//	memcpy(&nv->value, &nvm_byte_array, NVM_VALUE_LEN);
+
 	return (STAT_OK);
 }
 #endif // __AVR
@@ -92,6 +98,8 @@ stat_t read_persistent_value(nvObj_t *nv)
 #ifdef __AVR
 stat_t write_persistent_value(nvObj_t *nv)
 {
+	if (cm.cycle_state != CYCLE_OFF) return(rpt_exception(STAT_FILE_NOT_OPEN, NULL));	// can't write when machine is moving
+
 	nvm.tmp_value = nv->value;
 	ritorno(read_persistent_value(nv));
 	if ((isnan((double)nv->value)) || (isinf((double)nv->value)) || (fp_NE(nv->value, nvm.tmp_value))) {
@@ -107,7 +115,7 @@ stat_t write_persistent_value(nvObj_t *nv)
 #ifdef __ARM
 stat_t write_persistent_value(nvObj_t *nv)
 {
-	if (cm.cycle_state != CYCLE_OFF) return(rpt_exception(STAT_FILE_NOT_OPEN));	// can't write when machine is moving
+	if (cm.cycle_state != CYCLE_OFF) return(rpt_exception(STAT_FILE_NOT_OPEN, NULL));	// can't write when machine is moving
 	return (STAT_OK);
 }
 #endif // __ARM

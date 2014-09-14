@@ -1,7 +1,7 @@
 /*
  * cycle_jogging.c - jogging cycle extension to canonical_machine.c
  *
- * by Mike Estee - Other Machine Company
+ * by Mike Estee, Tom Cauchois - Other Machine Company
  *
  * This file ("the software") is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2 as published by the

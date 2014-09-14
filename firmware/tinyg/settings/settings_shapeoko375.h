@@ -40,7 +40,7 @@
 // ***> NOTE: The init message must be a single line with no CRs or LFs
 #define INIT_MESSAGE "Initializing configs to Shapeoko 375mm profile"
 
-#define JUNCTION_DEVIATION		0.01		// default value, in mm - smaller is faster
+#define JUNCTION_DEVIATION		0.01		// default value, in mm - larger is faster
 #define JUNCTION_ACCELERATION	2000000		// 2 million - centripetal acceleration around corners
 //#define JUNCTION_ACCELERATION	20000000	// 20 million - centripetal acceleration around corners
 

@@ -385,7 +385,7 @@ static char_t *_readline_stream(devflags_t *flags, uint16_t *size)
 		if (cs.comm_mode == TEXT_MODE) {
 			fprintf_P(stderr, PSTR("End of command file\n"));
 		} else {
-			rpt_exception(STAT_EOF);					// not really an exception
+			rpt_exception(STAT_EOF, NULL);				// not really an exception
 		}
 		controller_reset_source();						// reset to active source to default source
 	}

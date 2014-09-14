@@ -66,6 +66,7 @@ static stat_t _limit_switch_handler(void);
 static stat_t _system_assertions(void);
 static stat_t _sync_to_planner(void);
 static stat_t _sync_to_tx_buffer(void);
+
 static stat_t _controller_state(void);
 static stat_t _dispatch_command(void);
 static stat_t _dispatch_control(void);
@@ -161,7 +162,7 @@ static void _controller_HSM()
 	DISPATCH(hw_hard_reset_handler());			// 1. handle hard reset requests
 	DISPATCH(hw_bootloader_handler());			// 2. handle requests to enter bootloader
 	DISPATCH(_shutdown_idler());				// 3. idle in shutdown state
-//	DISPATCH( poll_switches());					// 4. run a switch polling cycle
+	DISPATCH( poll_switches());					// 4. run a switch polling cycle
 	DISPATCH(_limit_switch_handler());			// 5. limit switch has been thrown
 
 	DISPATCH(cm_feedhold_sequencing_callback());// 6a. feedhold state machine runner
@@ -175,6 +176,7 @@ static void _controller_HSM()
 	DISPATCH(sr_status_report_callback());		// conditionally send status report
 	DISPATCH(qr_queue_report_callback());		// conditionally send queue report
 	DISPATCH(rx_report_callback());             // conditionally send rx report
+
 	DISPATCH(_dispatch_control());				// read any control messages prior to executing cycles
 	DISPATCH(cm_arc_cycle_callback());			// arc generation runs as a cycle above lines
 	DISPATCH(cm_homing_cycle_callback());		// homing cycle operation (G28.2)
@@ -184,7 +186,7 @@ static void _controller_HSM()
 
 //----- command readers and parsers --------------------------------------------------//
 
-	DISPATCH(_sync_to_planner());				// ensure there is at least one free buffer in planning queue
+	DISPATCH(_sync_to_planner());				// ensure there are enough free buffers in planning queue
 	DISPATCH(_sync_to_tx_buffer());				// sync with TX buffer (pseudo-blocking)
 #ifdef __AVR
 	DISPATCH(set_baud_callback());				// perform baud rate update (must be after TX sync)
@@ -280,6 +282,7 @@ static void _dispatch_kernel()
 
 	} else if (cs.comm_mode == TEXT_MODE) {					// anything else must be Gcode
 		text_response(gc_gcode_parser(cs.bufp), cs.saved_buf);
+
 	} else {
 		strncpy(cs.out_buf, cs.bufp, (MAXED_BUFFER_LEN-8));	// use out_buf as temp; '-8' is buffer for JSON chars
 		sprintf((char *)cs.bufp,"{\"gc\":\"%s\"}\n", (char *)cs.out_buf);

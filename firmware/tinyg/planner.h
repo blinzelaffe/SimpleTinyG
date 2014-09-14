@@ -74,7 +74,7 @@ enum sectionState {
 #define MIN_LENGTH_MOVE 		((float)0.001)		// millimeters
 
 #define JERK_MULTIPLIER			((float)1000000)
-#define JERK_MATCH_PRECISION	((float)1000)		// precision to which jerk must match to be considered effectively the same
+#define JERK_MATCH_TOLERANCE	((float)1000)		// precision to which jerk must match to be considered effectively the same
 
 /* ESTD_SEGMENT_USEC	 Microseconds per planning segment
  *	Should be experimentally adjusted if the MIN_SEGMENT_LENGTH is changed
@@ -151,8 +151,6 @@ typedef struct mpBuffer {			// See Planning Velocity Notes for variable usage
 	stat_t (*bf_func)(struct mpBuffer *bf); // callback to buffer exec function
 	cm_exec_t cm_func;				// callback to canonical machine execution function
 
-	float naiive_move_time;
-
 	uint8_t buffer_state;			// used to manage queuing/dequeuing
 	uint8_t move_type;				// used to dispatch to run routine
 	uint8_t move_code;				// byte that can be used by used exec functions
@@ -199,9 +197,9 @@ typedef struct mpMoveMasterSingleton { // common variables for planning (move ma
 	magic_t magic_start;			// magic number to test memory integrity
 	float position[AXES];			// final move position for planning purposes
 
-//	float prev_jerk;				// jerk values cached from previous move
-//	float prev_recip_jerk;
-	float prev_cbrt_jerk;
+	float jerk;						// jerk values cached from previous block
+	float recip_jerk;
+	float cbrt_jerk;
 
 	magic_t magic_end;
 } mpMoveMasterSingleton_t;

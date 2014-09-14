@@ -88,8 +88,11 @@
 
 #include "tinyg.h"			// #1
 #include "config.h"			// #2
-#include "text_parser.h"
 #include "canonical_machine.h"
+#include "controller.h"
+#include "json_parser.h"
+#include "text_parser.h"
+
 #include "plan_arc.h"
 #include "planner.h"
 #include "stepper.h"
@@ -152,6 +155,7 @@ uint8_t cm_get_combined_state()
 		if (cm.motion_state == MOTION_RUN) cm.combined_state = COMBINED_RUN;
 		if (cm.motion_state == MOTION_HOLD) cm.combined_state = COMBINED_HOLD;
 	}
+	if (cm.machine_state == MACHINE_ALARM) { cm.combined_state = COMBINED_ALARM;}
 	if (cm.machine_state == MACHINE_SHUTDOWN) { cm.combined_state = COMBINED_SHUTDOWN;}
 
 	return cm.combined_state;
@@ -459,27 +463,35 @@ void cm_set_model_target(float target[], float flag[])
 /*
  * cm_test_soft_limits() - return error code if soft limit is exceeded
  *
- *	Must be called with target properly set in GM struct. Best done after cm_set_model_target().
+ *	The target[] arg must be in absolute machine coordinates. Best done after cm_set_model_target().
  *
  *	Tests for soft limit for any homed axis if min and max are different values. You can set min
- *	and max to 0,0 to disable soft limits for an axis. Also will not test a min or a max if the
- *	value is < -1000000 (negative one million). This allows a single end to be tested w/the other
- *	disabled, should that requirement ever arise.
+ *	and max to the same value (e.g. 0,0) to disable soft limits for an axis. Also will not test 
+ *	a min or a max if the value is more than +/- 1000000 (plus or minus 1 million ). 
+ *	This allows a single end to be tested w/the other disabled, should that requirement ever arise.
  */
+
+static stat_t _finalize_soft_limits(stat_t status)
+{
+	cm.gm.motion_mode = MOTION_MODE_CANCEL_MOTION_MODE;		// cancel motion
+	copy_vector(cm.gm.target, cm.gmx.position);				// reset model target
+	return (cm_soft_alarm(status));							// throw a soft alarm
+}
+
 stat_t cm_test_soft_limits(float target[])
 {
 	if (cm.soft_limit_enable == true) {
 		for (uint8_t axis = AXIS_X; axis < AXES; axis++) {
-			if (cm.homed[axis] != true) continue;		// don't test axes that are not homed
+			if (cm.homed[axis] != true) continue;								// skip axis if not homed
+			if (fp_EQ(cm.a[axis].travel_min, cm.a[axis].travel_max)) continue;	// skip axis if identical
+			if (fabs(cm.a[axis].travel_min) > DISABLE_SOFT_LIMIT) continue;		// skip min test if disabled
+			if (fabs(cm.a[axis].travel_max) > DISABLE_SOFT_LIMIT) continue;		// skip max test if disabled
 
-			if (fp_EQ(cm.a[axis].travel_min, cm.a[axis].travel_max)) continue;
-
-			if ((cm.a[axis].travel_min > DISABLE_SOFT_LIMIT) && (target[axis] < cm.a[axis].travel_min)) {
-				return (STAT_SOFT_LIMIT_EXCEEDED);
+			if (target[axis] < cm.a[axis].travel_min) {
+				return (_finalize_soft_limits(STAT_SOFT_LIMIT_EXCEEDED_XMIN + 2*axis));
 			}
-
-			if ((cm.a[axis].travel_max > DISABLE_SOFT_LIMIT) && (target[axis] > cm.a[axis].travel_max)) {
-				return (STAT_SOFT_LIMIT_EXCEEDED);
+			if (target[axis] > cm.a[axis].travel_max) {
+				return (_finalize_soft_limits(STAT_SOFT_LIMIT_EXCEEDED_XMAX + 2*axis));
 			}
 		}
 	}
@@ -571,7 +583,7 @@ stat_t canonical_machine_test_assertions(void)
 
 stat_t cm_soft_alarm(stat_t status)
 {
-	rpt_exception(status);					// send alarm message
+	rpt_exception(status, NULL);			// send alarm message
 	cm.machine_state = MACHINE_ALARM;
 	return (status);						// NB: More efficient than inlining rpt_exception() call.
 }
@@ -599,7 +611,16 @@ stat_t cm_hard_alarm(stat_t status)
 //	gpio_set_bit_off(MIST_COOLANT_BIT);		//++++ replace with exec function
 //	gpio_set_bit_off(FLOOD_COOLANT_BIT);	//++++ replace with exec function
 
-	rpt_exception(status);					// send shutdown message
+	// build an info string and call the exception report
+	char_t info[64];
+	if (js.json_syntax == JSON_SYNTAX_RELAXED) {
+		sprintf_P((char *)info, PSTR("n:%d,gc:\"%s\""), (int)cm.gm.linenum, cs.saved_buf);
+	} else {
+	//	sprintf(info, "\"n\":%d,\"gc\":\"%s\"", (int)cm.gm.linenum, cs.saved_buf);	// example
+		sprintf_P((char *)info, PSTR("\"n\":%d,\"gc\":\"%s\""), (int)cm.gm.linenum, cs.saved_buf);
+	}
+	rpt_exception(status, info);			// send shutdown message
+
 	cm.machine_state = MACHINE_SHUTDOWN;
 	return (status);
 }
@@ -823,17 +844,12 @@ stat_t cm_straight_traverse(float target[], float flags[])
 {
 	cm.gm.motion_mode = MOTION_MODE_STRAIGHT_TRAVERSE;
 	cm_set_model_target(target, flags);
-
-	// test soft limits
-	stat_t status = cm_test_soft_limits(cm.gm.target);
-	if (status != STAT_OK) return (cm_soft_alarm(status));
-
-	// prep and plan the move
-	cm_set_work_offsets(&cm.gm);				// capture the fully resolved offsets to the state
-	cm_cycle_start();							// required for homing & other cycles
-	mp_aline(&cm.gm);							// send the move to the planner
+	ritorno (cm_test_soft_limits(cm.gm.target)); 	// test soft limits; exit if thrown
+	cm_set_work_offsets(&cm.gm);					// capture the fully resolved offsets to the state
+	cm_cycle_start();								// required for homing & other cycles
+	stat_t status = mp_aline(&cm.gm);				// send the move to the planner
 	cm_finalize_move();
-	return (STAT_OK);
+	return (status);
 }
 
 /*
@@ -852,8 +868,8 @@ stat_t cm_set_g28_position(void)
 stat_t cm_goto_g28_position(float target[], float flags[])
 {
 	cm_set_absolute_override(MODEL, true);
-	cm_straight_traverse(target, flags);			 // move through intermediate point, or skip
-	while (mp_get_planner_buffers_available() == 0); // make sure you have an available buffer
+	cm_straight_traverse(target, flags);				// move through intermediate point, or skip
+	while (mp_get_planner_buffers_available() == 0);	// make sure you have an available buffer
 	float f[] = {1,1,1,1,1,1};
 	return(cm_straight_traverse(cm.gmx.g28_position, f));// execute actual stored move
 }
@@ -867,8 +883,8 @@ stat_t cm_set_g30_position(void)
 stat_t cm_goto_g30_position(float target[], float flags[])
 {
 	cm_set_absolute_override(MODEL, true);
-	cm_straight_traverse(target, flags);			 // move through intermediate point, or skip
-	while (mp_get_planner_buffers_available() == 0); // make sure you have an available buffer
+	cm_straight_traverse(target, flags);				// move through intermediate point, or skip
+	while (mp_get_planner_buffers_available() == 0);	// make sure you have an available buffer
 	float f[] = {1,1,1,1,1,1};
 	return(cm_straight_traverse(cm.gmx.g30_position, f));// execute actual stored move
 }
@@ -940,20 +956,14 @@ stat_t cm_straight_feed(float target[], float flags[])
 {
 	// trap zero feed rate condition
 	if ((cm.gm.feed_rate_mode != INVERSE_TIME_MODE) && (fp_ZERO(cm.gm.feed_rate))) {
-//		return(rpt_exception(STAT_GCODE_FEEDRATE_NOT_SPECIFIED));
 		return (STAT_GCODE_FEEDRATE_NOT_SPECIFIED);
 	}
 	cm.gm.motion_mode = MOTION_MODE_STRAIGHT_FEED;
 	cm_set_model_target(target, flags);
-
-	// test soft limits
-	stat_t status = cm_test_soft_limits(cm.gm.target);
-	if (status != STAT_OK) return (cm_soft_alarm(status));
-
-	// prep and plan the move
-	cm_set_work_offsets(&cm.gm);				// capture the fully resolved offsets to the state
-	cm_cycle_start();							// required for homing & other cycles
-	status = mp_aline(&cm.gm);					// send the move to the planner
+	ritorno (cm_test_soft_limits(cm.gm.target)); 	// test soft limits; exit if thrown
+	cm_set_work_offsets(&cm.gm);					// capture the fully resolved offsets to the state
+	cm_cycle_start();								// required for homing & other cycles
+	stat_t status = mp_aline(&cm.gm);				// send the move to the planner
 	cm_finalize_move();
 	return (status);
 }
@@ -1295,7 +1305,9 @@ stat_t cm_queue_flush()
 
 static void _exec_program_finalize(float *value, float *flag)
 {
-	cm.machine_state = (uint8_t)value[0];
+	if ((cm.machine_state != MACHINE_ALARM) && (cm.machine_state != MACHINE_SHUTDOWN)) {
+		cm.machine_state = (uint8_t)value[0];
+	}
 	cm_set_motion_state(MOTION_STOP);
 	if (cm.cycle_state == CYCLE_MACHINING) {
 		cm.cycle_state = CYCLE_OFF;						// don't end cycle if homing, probing, etc.
@@ -1306,8 +1318,8 @@ static void _exec_program_finalize(float *value, float *flag)
 
 	// perform the following resets if it's a program END
 	if (cm.machine_state == MACHINE_PROGRAM_END) {
-		cm_reset_origin_offsets();						// G92.1 - we do G91.1 instead of G92.2
-	//	cm_suspend_origin_offsets();					// G92.2 - as per Kramer
+//		cm_reset_origin_offsets();						// G92.1 - we do G91.1 instead of G92.2
+		cm_suspend_origin_offsets();					// G92.2 - as per Kramer
 		cm_set_coord_system(cm.coord_system);			// reset to default coordinate system
 		cm_select_plane(cm.select_plane);				// reset to default arc plane
 		cm_set_distance_mode(cm.distance_mode);
@@ -1954,6 +1966,13 @@ static void _print_pos(nvObj_t *nv, const char *format, uint8_t units)
 	fprintf_P(stderr, format, axes[axis], nv->value, GET_TEXT_ITEM(msg_units, units));
 }
 
+static void _print_hom(nvObj_t *nv, const char *format)
+{
+	char axes[] = {"XYZABC"};
+	uint8_t axis = _get_axis(nv->index);
+	fprintf_P(stderr, format, axes[axis], nv->value);
+}
+
 void cm_print_am(nvObj_t *nv)	// print axis mode with enumeration string
 {
 	fprintf_P(stderr, fmt_Xam, nv->group, nv->token, nv->group, (uint8_t)nv->value,
@@ -1981,6 +2000,7 @@ void cm_print_cpos(nvObj_t *nv) { _print_axis_coord_flt(nv, fmt_cpos);}
 void cm_print_pos(nvObj_t *nv) { _print_pos(nv, fmt_pos, cm_get_units_mode(MODEL));}
 void cm_print_mpo(nvObj_t *nv) { _print_pos(nv, fmt_mpo, MILLIMETERS);}
 void cm_print_ofs(nvObj_t *nv) { _print_pos(nv, fmt_ofs, MILLIMETERS);}
+void cm_print_hom(nvObj_t *nv) { _print_hom(nv, fmt_hom);}
 
 #endif // __TEXT_MODE
 

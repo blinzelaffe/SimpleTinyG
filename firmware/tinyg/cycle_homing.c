@@ -71,10 +71,11 @@ struct hmHomingSingleton {			// persistent homing runtime variables
 	// state saved from gcode model
 	uint8_t saved_units_mode;		// G20,G21 global setting
 	uint8_t saved_coord_system;		// G54 - G59 setting
-	uint8_t saved_distance_mode;	// G90,G91 global setting
-	uint8_t saved_feed_rate_mode;   // G93,G94 global setting
+	uint8_t saved_distance_mode;	// G90, G91 global setting
+	uint8_t saved_feed_rate_mode;	// G93, G94 global setting
 	float saved_feed_rate;			// F setting
 	float saved_jerk;				// saved and restored for each axis homed
+	float target_position;          // saved prior to initiating moves, for verifying post-move position
 };
 static struct hmHomingSingleton hm;
 
@@ -88,10 +89,11 @@ static stat_t _homing_axis_latch(int8_t axis);
 static stat_t _homing_axis_zero_backoff(int8_t axis);
 static stat_t _homing_axis_set_zero(int8_t axis);
 static stat_t _homing_axis_move(int8_t axis, float target, float velocity);
-//static stat_t _homing_abort(int8_t axis);
 static stat_t _homing_error_exit(int8_t axis, stat_t status);
 static stat_t _homing_finalize_exit(int8_t axis);
 static int8_t _get_next_axis(int8_t axis);
+//static stat_t _homing_abort(int8_t axis);
+
 /*
 static void _homing_debug_print(int8_t axis)
 {
@@ -174,6 +176,7 @@ stat_t cm_homing_cycle_start(void)
 	hm.saved_distance_mode = cm_get_distance_mode(ACTIVE_MODEL);
 	hm.saved_feed_rate_mode = cm_get_feed_rate_mode(ACTIVE_MODEL);
 	hm.saved_feed_rate = cm_get_feed_rate(ACTIVE_MODEL);
+	hm.target_position = 0;
 
 	// set working values
 	cm_set_units_mode(MILLIMETERS);
@@ -199,6 +202,7 @@ stat_t cm_homing_cycle_start_no_set(void)
 /* Homing axis moves - these execute in sequence for each axis
  * cm_homing_cycle_callback() 	- main loop callback for running the homing cycle
  *	_set_homing_func()			- a convenience for setting the next dispatch vector and exiting
+ *  _verify_position()          - checks current position against hm.target_position from last move
  *	_trigger_feedhold()			- callback from switch closure to trigger a feedhold (convenience for casting)
  *  _bind_switch_settings()		- setup switch for homing operation
  *	_restore_switch_settings()	- return switch to normal operation
@@ -267,8 +271,8 @@ static stat_t _homing_axis_start(int8_t axis)
 	hm.min_mode = get_switch_mode(MIN_SWITCH(axis));
 	hm.max_mode = get_switch_mode(MAX_SWITCH(axis));
 #else
-	hm.min_mode = get_switch_mode(axis, SW_MIN);
-	hm.max_mode = get_switch_mode(axis, SW_MAX);
+	hm.min_mode = get_switch_mode2(axis, SW_MIN);
+	hm.max_mode = get_switch_mode2(axis, SW_MAX);
 #endif
 
 	if ( ((hm.min_mode & SW_HOMING_BIT) ^ (hm.max_mode & SW_HOMING_BIT)) == 0) {	  // one or the other must be homing
@@ -320,19 +324,18 @@ static stat_t _homing_axis_start(int8_t axis)
 #else
 //	switch_t *s = &sw.s[hm.homing_switch_axis][hm.homing_switch_position];
 //	_bind_switch_settings(s);
-	_bind_switch_settings(&sw.s[hm.homing_switch_axis][hm.homing_switch_position]);
+	_bind_switch_settings(&sw2.s[hm.homing_switch_axis][hm.homing_switch_position]);
 
-	uint8_t sw_mode = get_switch_mode(hm.homing_switch_axis, hm.homing_switch_position);
+	uint8_t sw_mode = get_switch_mode2(hm.homing_switch_axis, hm.homing_switch_position);
 	if ((sw_mode != SW_MODE_HOMING) && (sw_mode != SW_MODE_HOMING_LIMIT)) {
 		return (_set_homing_func(_homing_axis_start));
 	}
 	// disable the limit switch parameter if there is no limit switch
-	if (get_switch_mode(hm.limit_switch_axis, hm.limit_switch_position) == SW_MODE_DISABLED) {
+	if (get_switch_mode2(hm.limit_switch_axis, hm.limit_switch_position) == SW_MODE_DISABLED) {
 		hm.limit_switch_axis = -1;
 	}
 #endif
 
-//	hm.saved_jerk = cm.a[axis].jerk_max;					// save the max jerk value
 	hm.saved_jerk = cm_get_axis_jerk(axis);					// save the max jerk value
 	return (_set_homing_func(_homing_axis_clear));			// start the clear
 }
@@ -342,15 +345,17 @@ static stat_t _homing_axis_start(int8_t axis)
 static stat_t _homing_axis_clear(int8_t axis)				// first clear move
 {
 #ifndef __NEW_SWITCHES
-	if (sw.state[hm.homing_switch] == SW_CLOSED) {
+	if (sw1.state[hm.homing_switch] == SW_CLOSED) {
 		_homing_axis_move(axis, hm.latch_backoff, hm.search_velocity);
-	} else if (sw.state[hm.limit_switch] == SW_CLOSED) {
+	} else if (sw1.state[hm.limit_switch] == SW_CLOSED) {
 		_homing_axis_move(axis, -hm.latch_backoff, hm.search_velocity);
+	} else { // no move needed, so target position is same as current position
+		hm.target_position = cm_get_absolute_position(MODEL, axis);
 	}
 #else
-	if (read_switch(hm.homing_switch_axis, hm.homing_switch_position) == SW_CLOSED) {
+	if (read_switch2(hm.homing_switch_axis, hm.homing_switch_position) == SW_CLOSED) {
 		_homing_axis_move(axis, hm.latch_backoff, hm.search_velocity);
-	} else if (read_switch(hm.limit_switch_axis, hm.limit_switch_position) == SW_CLOSED) {
+	} else if (read_switch2(hm.limit_switch_axis, hm.limit_switch_position) == SW_CLOSED) {
 		_homing_axis_move(axis, -hm.latch_backoff, hm.search_velocity);
 	} else { // no move needed, so target position is same as current position
 		hm.target_position = cm_get_absolute_position(MODEL, axis);
@@ -400,16 +405,15 @@ static stat_t _homing_axis_set_zero(int8_t axis)			// set zero and finish up
 	if (hm.set_coordinates != false) {
 		cm_set_position(axis, 0);
 		cm.homed[axis] = true;
-	} else {
-        // do not set axis if in G28.4 cycle
+	} else { // do not set axis if in G28.4 cycle
 		cm_set_position(axis, cm_get_work_position(RUNTIME, axis));
 	}
 	cm_set_axis_jerk(axis, hm.saved_jerk);					// restore the max jerk value
 
 #ifdef __NEW_SWITCHES
-	switch_t *s = &sw.s[hm.homing_switch_axis][hm.homing_switch_position];
+	switch_t *s = &sw2.s[hm.homing_switch_axis][hm.homing_switch_position];
 	s->on_trailing = hm.switch_saved_on_trailing;
-	_restore_switch_settings(&sw.s[hm.homing_switch_axis][hm.homing_switch_position]);
+	_restore_switch_settings(&sw2.s[hm.homing_switch_axis][hm.homing_switch_position]);
 #endif
 	return (_set_homing_func(_homing_axis_start));
 }
@@ -421,7 +425,7 @@ static stat_t _homing_axis_move(int8_t axis, float target, float velocity)
 
 	vect[axis] = target;
 	flags[axis] = true;
-	cm.gm.feed_rate = velocity;
+	cm_set_feed_rate(velocity);
 	mp_flush_planner();										// don't use cm_request_queue_flush() here
 	cm_request_cycle_start();
 	ritorno(cm_straight_feed(vect, flags));
@@ -479,10 +483,10 @@ static stat_t _homing_finalize_exit(int8_t axis)			// third part of return to ho
 	cm_set_units_mode(hm.saved_units_mode);
 	cm_set_distance_mode(hm.saved_distance_mode);
 	cm_set_feed_rate_mode(hm.saved_feed_rate_mode);
-	cm.gm.feed_rate = hm.saved_feed_rate;
+	cm_set_feed_rate(hm.saved_feed_rate);
 	cm_set_motion_mode(MODEL, MOTION_MODE_CANCEL_MOTION_MODE);
 	cm_cycle_end();
-	cm.cycle_state = CYCLE_OFF;
+	cm.cycle_state = CYCLE_OFF;								// required
 	return (STAT_OK);
 }
 
@@ -502,21 +506,23 @@ static stat_t _homing_finalize_exit(int8_t axis)			// third part of return to ho
 static int8_t _get_next_axis(int8_t axis)
 {
 #if (HOMING_AXES <= 4)
-//    uint8_t axis;
-//    for(axis = AXIS_X; axis < HOMING_AXES; axis++)
-//        if(fp_TRUE(cm.gf.target[axis])) break;
-//    if(axis >= HOMING_AXES) return -2;
-//    switch(axis) {
-//        case -1:        if (fp_TRUE(cm.gf.target[AXIS_Z])) return (AXIS_Z);
-//        case AXIS_Z:    if (fp_TRUE(cm.gf.target[AXIS_X])) return (AXIS_X);
-//        case AXIS_X:    if (fp_TRUE(cm.gf.target[AXIS_Y])) return (AXIS_Y);
-//        case AXIS_Y:    if (fp_TRUE(cm.gf.target[AXIS_A])) return (AXIS_A);
-//#if (HOMING_AXES > 4)
-//        case AXIS_A:    if (fp_TRUE(cm.gf.target[AXIS_B])) return (AXIS_B);
-//        case AXIS_B:    if (fp_True(cm.gf.target[AXIS_C])) return (AXIS_C);
-//#endif
-//        default:        return -1;
-//    }
+/* alternate code:
+	uint8_t axis;
+	for(axis = AXIS_X; axis < HOMING_AXES; axis++)
+		if(fp_TRUE(cm.gf.target[axis])) break;
+	if(axis >= HOMING_AXES) return -2;
+	  switch(axis) {
+		case -1:        if (fp_TRUE(cm.gf.target[AXIS_Z])) return (AXIS_Z);
+		case AXIS_Z:    if (fp_TRUE(cm.gf.target[AXIS_X])) return (AXIS_X);
+		case AXIS_X:    if (fp_TRUE(cm.gf.target[AXIS_Y])) return (AXIS_Y);
+		case AXIS_Y:    if (fp_TRUE(cm.gf.target[AXIS_A])) return (AXIS_A);
+#if (HOMING_AXES > 4)
+		case AXIS_A:    if (fp_TRUE(cm.gf.target[AXIS_B])) return (AXIS_B);
+		case AXIS_B:    if (fp_True(cm.gf.target[AXIS_C])) return (AXIS_C);
+#endif
+		default:        return -1;
+	}
+*/
 	if (axis == -1) {	// inelegant brute force solution
 		if (fp_TRUE(cm.gf.target[AXIS_Z])) return (AXIS_Z);
 		if (fp_TRUE(cm.gf.target[AXIS_X])) return (AXIS_X);
@@ -536,7 +542,6 @@ static int8_t _get_next_axis(int8_t axis)
 	return (-1);	// done
 
 #else
-
 	if (axis == -1) {
 		if (fp_TRUE(cm.gf.target[AXIS_Z])) return (AXIS_Z);
 		if (fp_TRUE(cm.gf.target[AXIS_X])) return (AXIS_X);

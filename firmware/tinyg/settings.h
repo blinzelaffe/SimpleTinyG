@@ -55,7 +55,8 @@
 #define NETWORK_MODE				NETWORK_STANDALONE
 
 #define JSON_VERBOSITY				JV_MESSAGES				// one of: JV_SILENT, JV_FOOTER, JV_CONFIGS, JV_MESSAGES, JV_LINENUM, JV_VERBOSE
-#define JSON_SYNTAX_MODE 			JSON_SYNTAX_STRICT		// one of JSON_SYNTAX_RELAXED, JSON_SYNTAX_STRICT
+//#define JSON_SYNTAX_MODE 			JSON_SYNTAX_STRICT		// one of JSON_SYNTAX_RELAXED, JSON_SYNTAX_STRICT
+#define JSON_SYNTAX_MODE 			JSON_SYNTAX_RELAXED		// one of JSON_SYNTAX_RELAXED, JSON_SYNTAX_STRICT
 #define JSON_FOOTER_STYLE			1						// 1 = footer w/checksum, 2 = footer w/window slots
 #define JSON_FOOTER_DEPTH			0						// 0 = footer is child of R, 1 = footer is child of response object (deprecated)
 
@@ -112,11 +113,11 @@
 //#include "settings/settings_test.h"					// Settings for testing - not for release
 //#include "settings/settings_hammer.h"					// Hammer torque demo
 //#include "settings/settings_pendulum.h"				// Pendulum motion demo
-#include "settings/settings_othermill.h"				// OMC OtherMill
+//#include "settings/settings_othermill.h"				// OMC OtherMill
 //#include "settings/settings_pocketnc.h"				// PocketNC 5 axis machining center
 //#include "settings/settings_probotixV90.h"			// Probotix FireballV90
 //#include "settings/settings_shapeoko375.h"			// Shapeoko 375mm kit
-//#include "settings/settings_shapeoko2.h"				// Shapeoko2 - standard kit
+#include "settings/settings_shapeoko2.h"				// Shapeoko2 standard kit
 //#include "settings/settings_ultimaker.h"				// Ultimaker 3D printer
 //#include "settings/settings_zen7x12.h"				// Zen Toolworks 7x12
 
