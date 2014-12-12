@@ -2,8 +2,7 @@ SimpleTinyG
 ========
 
 SimpleTinyG is a fork of the great TinyG.
-The Project aim to integrate the LUFA-usb-stack and some 
-to the microcontroller. 
+The Project aim to integrate the LUFA-usb-stack.
 
 Some more informations to the the forked TinyG
 * 6 axis motion (XYXABC axes)
