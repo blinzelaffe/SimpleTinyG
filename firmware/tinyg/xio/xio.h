@@ -41,16 +41,17 @@
 // Pre-allocated XIO devices (configured devices)
 // Unused devices are commented out. All this needs to line up.
 
-enum xioDevNum_t {		// TYPE:	DEVICE:
-	XIO_DEV_USB,		// USART	USB device
-	XIO_DEV_RS485,		// USART	RS485 device
-	XIO_DEV_SPI1,		// SPI		SPI channel #1
-	XIO_DEV_SPI2,		// SPI		SPI channel #2
-//	XIO_DEV_SPI3,		// SPI		SPI channel #3
-//	XIO_DEV_SPI4,		// SPI		SPI channel #4
-	XIO_DEV_PGM,		// FILE		Program memory file  (read only)
-//	XIO_DEV_SD,			// FILE		SD card (not implemented)
-	XIO_DEV_COUNT		// total device count (must be last entry)
+enum xioDevNum_t {			// TYPE:	DEVICE:
+	XIO_DEV_UART_USB,		// USART	USB ds,mmok,,
+	XIO_DEV_RS485,			// USART	RS485 device
+	XIO_DEV_SPI1,			// SPI		SPI channel #1
+	XIO_DEV_SPI2,			// SPI		SPI channel #2
+//	XIO_DEV_SPI3,			// SPI		SPI channel #3
+//	XIO_DEV_SPI4,			// SPI		SPI channel #4
+	XIO_DEV_PGM,			// FILE		Program memory file  (read only)
+//	XIO_DEV_SD,				// FILE		SD card (not implemented)
+	XIO_DEV_INTERNAL_USB,	// USB		USB file  (read only)
+	XIO_DEV_COUNT			// total device count (must be last entry)
 };
 // If your change these ^, check these v
 
@@ -62,6 +63,10 @@ enum xioDevNum_t {		// TYPE:	DEVICE:
 
 #define XIO_DEV_FILE_COUNT		1				// # of FILE devices
 #define XIO_DEV_FILE_OFFSET		(XIO_DEV_USART_COUNT + XIO_DEV_SPI_COUNT) // index into FILES
+
+#define XIO_DEV_USB_COUNT		1				// # of FILE devices
+#define XIO_DEV_USB_OFFSET		(XIO_DEV_USART_COUNT + XIO_DEV_SPI_COUNT + XIO_DEV_FILE_COUNT) // index into FILES
+
 
 /******************************************************************************
  * Device structures
@@ -128,6 +133,7 @@ typedef void (*x_flow_t)(xioDev_t *d);
 #include "xio_file.h"
 #include "xio_usart.h"
 #include "xio_spi.h"
+#include "xio_internal_usb.h"
 //#include "xio_signals.h"
 
 // Static structure allocations
@@ -135,6 +141,7 @@ xioDev_t 		ds[XIO_DEV_COUNT];			// allocate top-level dev structs
 xioUsart_t 		us[XIO_DEV_USART_COUNT];	// USART extended IO structs
 xioSpi_t 		spi[XIO_DEV_SPI_COUNT];		// SPI extended IO structs
 xioFile_t 		fs[XIO_DEV_FILE_COUNT];		// FILE extended IO structs
+xioUSB_t		uis;
 //xioSignals_t	sig;						// signal flags
 extern struct controllerSingleton tg;	// needed by init() for default source
 

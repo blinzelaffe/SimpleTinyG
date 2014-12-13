@@ -66,10 +66,10 @@
 //NOTE: XIO_BLOCK / XIO_NOBLOCK affects reads only. Writes always block. (see xio.h)
 
 #define USB_BAUD  XIO_BAUD_115200
-#define USB_FLAGS (XIO_BLOCK |  XIO_ECHO | XIO_XOFF | XIO_LINEMODE )
+#define UARTUSB_FLAGS (XIO_BLOCK |  XIO_ECHO | XIO_XOFF | XIO_LINEMODE )
 
 #define USB_USART USARTC0						// USB usart
-#define USB_RX_ISR_vect USARTC0_RXC_vect	 	// (RX) reception complete IRQ
+#define UARTUSB_RX_ISR_vect USARTC0_RXC_vect	 	// (RX) reception complete IRQ
 #define USB_TX_ISR_vect USARTC0_DRE_vect		// (TX) data register empty IRQ
 
 #define USB_PORT PORTC							// port where the USART is located

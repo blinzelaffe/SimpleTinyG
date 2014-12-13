@@ -1275,9 +1275,9 @@ static void _print_corr(cmdObj_t *cmd)	// print coordinate offsets with rotary u
 static stat_t _set_comm_helper(cmdObj_t *cmd, uint32_t yes, uint32_t no)
 {
 	if (fp_NOT_ZERO(cmd->value)) { 
-		(void)xio_ctrl(XIO_DEV_USB, yes);
+		(void)xio_ctrl(XIO_DEV_UART_USB, yes);
 	} else { 
-		(void)xio_ctrl(XIO_DEV_USB, no);
+		(void)xio_ctrl(XIO_DEV_UART_USB, no);
 	}
 	return (STAT_OK);
 }
@@ -1286,13 +1286,13 @@ static stat_t _set_ic(cmdObj_t *cmd) 				// ignore CR or LF on RX
 {
 	if (cmd->value > IGNORE_LF) { return (STAT_INPUT_VALUE_UNSUPPORTED);}
 	cfg.ignore_crlf = (uint8_t)cmd->value;
-	(void)xio_ctrl(XIO_DEV_USB, XIO_NOIGNORECR);	// clear them both
-	(void)xio_ctrl(XIO_DEV_USB, XIO_NOIGNORELF);
+	(void)xio_ctrl(XIO_DEV_UART_USB, XIO_NOIGNORECR);	// clear them both
+	(void)xio_ctrl(XIO_DEV_UART_USB, XIO_NOIGNORELF);
 
 	if (cfg.ignore_crlf == IGNORE_CR) {				// $ic=1
-		(void)xio_ctrl(XIO_DEV_USB, XIO_IGNORECR);
+		(void)xio_ctrl(XIO_DEV_UART_USB, XIO_IGNORECR);
 	} else if (cfg.ignore_crlf == IGNORE_LF) {		// $ic=2
-		(void)xio_ctrl(XIO_DEV_USB, XIO_IGNORELF);
+		(void)xio_ctrl(XIO_DEV_UART_USB, XIO_IGNORELF);
 	}
 	return (STAT_OK);
 }
@@ -1347,7 +1347,7 @@ stat_t cfg_baud_rate_callback(void)
 {
 	if (cfg.usb_baud_flag == false) { return(STAT_NOOP);}
 	cfg.usb_baud_flag = false;
-	xio_set_baud(XIO_DEV_USB, cfg.usb_baud_rate);
+	xio_set_baud(XIO_DEV_UART_USB, cfg.usb_baud_rate);
 	return (STAT_OK);
 }
 

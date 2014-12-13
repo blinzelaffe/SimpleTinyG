@@ -101,12 +101,14 @@ void xio_init()
 	xio_init_usart();
 	xio_init_spi();
 	xio_init_file();
+	xio_init_internal_usb();
 
 	// open individual devices (file device opens occur at time-of-use)
-	xio_open(XIO_DEV_USB,  0, USB_FLAGS);
+	xio_open(XIO_DEV_UART_USB,  0, UARTUSB_FLAGS);
 	xio_open(XIO_DEV_RS485,0, RS485_FLAGS);
 	xio_open(XIO_DEV_SPI1, 0, SPI_FLAGS);
 	xio_open(XIO_DEV_SPI2, 0, SPI_FLAGS);
+	xio_open(XIO_DEV_INTERNAL_USB,0,INTERNAL_USB_FLAGS);
 }
 
 void xio_reset_working_flags(xioDev_t *d)
@@ -258,8 +260,8 @@ void xio_set_stderr(const uint8_t dev)
  */
 uint8_t xio_assertions(uint8_t *value)
 {
-	if (ds[XIO_DEV_USB].magic_start		!= MAGICNUM) { *value = 100; }
-	if (ds[XIO_DEV_USB].magic_end		!= MAGICNUM) { *value = 101; }
+	if (ds[XIO_DEV_UART_USB].magic_start		!= MAGICNUM) { *value = 100; }
+	if (ds[XIO_DEV_UART_USB].magic_end		!= MAGICNUM) { *value = 101; }
 	if (ds[XIO_DEV_RS485].magic_start	!= MAGICNUM) { *value = 102; }
 	if (ds[XIO_DEV_RS485].magic_end		!= MAGICNUM) { *value = 103; }
 	if (ds[XIO_DEV_SPI1].magic_start	!= MAGICNUM) { *value = 104; }

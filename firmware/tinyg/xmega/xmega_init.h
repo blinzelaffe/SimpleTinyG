@@ -24,6 +24,18 @@
  * Global Scope Functions
  */
 
+/* Offset of member MEMBER in a struct of type TYPE. */
+#define offsetof(TYPE, MEMBER) __builtin_offsetof (TYPE, MEMBER)
+
+
+enum XMEGA_System_UsbDFLLReference_t
+{
+	DFLL_REF_INT_RC32KHZ   = 0, /**< Reference clock sourced from the Internal 32KHz RC Oscillator clock. */
+	DFLL_REF_EXT_RC32KHZ   = 1, /**< Reference clock sourced from the External 32KHz RC Oscillator clock connected to TOSC pins. */
+	DFLL_REF_INT_USBSOF    = 2, /**< Reference clock sourced from the USB Start Of Frame packets. */
+};
+
+
 void xmega_init(void);
 void CCPWrite( volatile uint8_t * address, uint8_t value );
 

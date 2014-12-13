@@ -25,11 +25,11 @@
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include <avr/pgmspace.h>
 
 #include "../tinyg.h"
 #include "../system.h"
 #include "xmega_init.h"
-
 void xmega_init_clocks(void);
 void CCPWrite(volatile uint8_t * address, uint8_t value);
 
@@ -84,6 +84,39 @@ void xmega_init_clocks(void)
 	OSC.CTRL &= ~OSC_RC2MEN_bm;				// disable internal 2 MHz clock
 #endif
 
+#ifdef __CLOCK_INTERNAL_32MHZ
+	// enable PLL 2x16MHz
+	OSC.PLLCTRL = (OSC_PLLSRC_RC2M_gc  | 16);
+	OSC.CTRL |= OSC_PLLEN_bm;	
+	while (!(OSC.STATUS & OSC_PLLRDY_bm));
+	
+	// set the CPU core running from PLL 
+	CCP = CCP_IOREG_gc; 					// Security Signature to modify clk
+	CLK.CTRL |= CLK_SCLKSEL_PLL_gc;
+	
+	// starting the RC oscillator
+	OSC.CTRL |= OSC_RC32MEN_bm;
+	while (!(OSC.STATUS & OSC_RC32MRDY_bm));
+	
+	#ifdef __CLOCK_ENABLE_USB_48MHZ	// Initialize 48 MHz USB clock if enabled
+		// start DFLL (48MHz generation) using USB SOF for sync 
+		OSC.DFLLCTRL   |= (DFLL_REF_INT_USBSOF << OSC_RC32MCREF_gp);
+		DFLLRC32M.COMP1 = (48000UL & 0xFF);
+		DFLLRC32M.COMP2 = (48000UL >> 8);
+
+		// settings for USBOF
+		NVM.CMD        = NVM_CMD_READ_CALIB_ROW_gc;
+		DFLLRC32M.CALA = pgm_read_byte(offsetof(NVM_PROD_SIGNATURES_t, USBRCOSCA));
+		DFLLRC32M.CALB = pgm_read_byte(offsetof(NVM_PROD_SIGNATURES_t, USBRCOSC));
+		NVM.CMD        = 0;
+
+		DFLLRC32M.CTRL  = DFLL_ENABLE_bm;
+	#endif
+#endif
+
+/*
+ *	Old implementation for Backup
+ *
 #ifdef __CLOCK_INTERNAL_32MHZ 				// 32 MHz internal clock (Boston Android code)
 	CCP = CCP_IOREG_gc; 					// Security Signature to modify clk
 	OSC.CTRL = OSC_RC32MEN_bm; 				// enable internal 32MHz oscillator
@@ -91,6 +124,9 @@ void xmega_init_clocks(void)
 	CCP = CCP_IOREG_gc; 					// Security Signature to modify clk
 	CLK.CTRL = 0x01; 						// select sysclock 32MHz osc
 #endif
+*/
+
+
 }
 
 /******************************************************************************

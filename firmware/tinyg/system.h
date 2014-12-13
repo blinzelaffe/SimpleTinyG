@@ -53,7 +53,9 @@ void sys_get_id(char *id);
 // Clock Crystal Config. Pick one:
 //#define __CLOCK_INTERNAL_32MHZ TRUE	// use internal oscillator
 //#define __CLOCK_EXTERNAL_8MHZ	TRUE	// uses PLL to provide 32 MHz system clock
-#define __CLOCK_EXTERNAL_16MHZ TRUE		// uses PLL to provide 32 MHz system clock
+//#define __CLOCK_EXTERNAL_16MHZ TRUE		// uses PLL to provide 32 MHz system clock
+#define __CLOCK_INTERNAL_32MHZ TRUE
+#define __CLOCK_ENABLE_USB_48MHZ TRUE
 
 /*** Motor, output bit & switch port assignments ***
  *** These are not all the same, and must line up in multiple places in gpio.h ***
@@ -65,7 +67,7 @@ void sys_get_id(char *id);
 #define PORT_MOTOR_4	PORTD
 
 #define PORT_SWITCH_X 	PORTA			// Switch axes mapped to ports
-#define PORT_SWITCH_Y 	PORTD
+#define PORT_SWITCH_Y 	PORTB
 #define PORT_SWITCH_Z 	PORTE
 #define PORT_SWITCH_A 	PORTF
 
@@ -80,10 +82,18 @@ void sys_get_id(char *id);
 #define PORT_OUT_V6_A	PORTD
 
 // These next four must be changed when the PORT_MOTOR_* definitions change!
-#define PORTCFG_VP0MAP_PORT_MOTOR_1_gc PORTCFG_VP0MAP_PORTA_gc
-#define PORTCFG_VP1MAP_PORT_MOTOR_2_gc PORTCFG_VP1MAP_PORTF_gc
-#define PORTCFG_VP2MAP_PORT_MOTOR_3_gc PORTCFG_VP2MAP_PORTE_gc
-#define PORTCFG_VP3MAP_PORT_MOTOR_4_gc PORTCFG_VP3MAP_PORTD_gc
+#if defined (__AVR_ATxmega192A3U__)
+	#define PORTCFG_VP0MAP_PORT_MOTOR_1_gc PORTCFG_VP02MAP_PORTA_gc
+	#define PORTCFG_VP1MAP_PORT_MOTOR_2_gc PORTCFG_VP13MAP_PORTF_gc
+	#define PORTCFG_VP2MAP_PORT_MOTOR_3_gc PORTCFG_VP02MAP_PORTE_gc
+	#define PORTCFG_VP3MAP_PORT_MOTOR_4_gc PORTCFG_VP13MAP_PORTD_gc
+#elif defined (__AVR_ATxmega192A3__)
+	#define PORTCFG_VP0MAP_PORT_MOTOR_1_gc PORTCFG_VP0MAP_PORTA_gc
+	#define PORTCFG_VP1MAP_PORT_MOTOR_2_gc PORTCFG_VP1MAP_PORTF_gc
+	#define PORTCFG_VP2MAP_PORT_MOTOR_3_gc PORTCFG_VP2MAP_PORTE_gc
+	#define PORTCFG_VP3MAP_PORT_MOTOR_4_gc PORTCFG_VP3MAP_PORTD_gc
+#endif
+
 
 #define PORT_MOTOR_1_VPORT	VPORT0
 #define PORT_MOTOR_2_VPORT	VPORT1

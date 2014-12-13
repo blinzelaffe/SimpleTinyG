@@ -62,6 +62,7 @@ static stat_t _limit_switch_handler(void);
 static stat_t _alarm_idler(void);
 static stat_t _system_assertions(void);
 static stat_t _sync_to_tx_buffer(void);
+static stat_t _sync_internal_usb();
 static stat_t _sync_to_planner(void);
 
 /*
@@ -147,6 +148,7 @@ static void _controller_HSM()
 //----- command readers and parsers ------------------------------------//
 	DISPATCH(_sync_to_planner());			// ensure there is at least one free buffer in planning queue
 	DISPATCH(_sync_to_tx_buffer());			// sync with TX buffer (pseudo-blocking)
+	DISPATCH(_sync_internal_usb());
 	DISPATCH(cfg_baud_rate_callback());		// perform baud rate update (must be after TX sync)
 	DISPATCH(_dispatch());					// read and execute next command
 }
@@ -270,9 +272,15 @@ void tg_text_response(const uint8_t status, const char *buf)
  *	and other messages are sent to the active device.
  */
 
+static stat_t _sync_internal_usb()
+{
+	xio_sync_internal_usb();
+	return (STAT_OK);
+}
+
 static stat_t _sync_to_tx_buffer()
 {
-	if ((xio_get_tx_bufcount_usart(ds[XIO_DEV_USB].x) >= XOFF_TX_LO_WATER_MARK)) {
+	if ((xio_get_tx_bufcount_usart(ds[XIO_DEV_UART_USB].x) >= XOFF_TX_LO_WATER_MARK)) {
 		return (STAT_EAGAIN);
 	}
 	return (STAT_OK);

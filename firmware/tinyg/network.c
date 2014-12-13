@@ -54,8 +54,8 @@ void net_init()
 {
 	// re-point IO if in slave mode
 	if (tg.network_mode == NETWORK_SLAVE) {
-		tg_init(XIO_DEV_RS485, XIO_DEV_USB, XIO_DEV_USB);
-		tg_set_secondary_source(XIO_DEV_USB);
+		tg_init(XIO_DEV_RS485, XIO_DEV_UART_USB, XIO_DEV_UART_USB);
+		tg_set_secondary_source(XIO_DEV_UART_USB);
 	}
 	xio_enable_rs485_rx();		// needed for clean start for RS-485;
 }
@@ -79,13 +79,13 @@ uint8_t net_test_rxtx(uint8_t c)
 		if ((c < 0x20) || (c >= 0x7F)) { c = 0x20; }
 		c++;
 		xio_putc(XIO_DEV_RS485, c);			// write to RS485 port
-		xio_putc(XIO_DEV_USB, c);			// write to USB port
+		xio_putc(XIO_DEV_UART_USB, c);			// write to USB port
 		_delay_ms(2);
 
 	// slave operation
 	} else {
 		if ((d = xio_getc(XIO_DEV_RS485)) != _FDEV_ERR) {
-			xio_putc(XIO_DEV_USB, d);
+			xio_putc(XIO_DEV_UART_USB, d);
 		}
 	}
 	return (c);
@@ -102,13 +102,13 @@ uint8_t net_test_loopback(uint8_t c)
 		// wait for loopback character
 		while (true) {
 			if ((c = xio_getc(XIO_DEV_RS485)) != _FDEV_ERR) {
-				xio_putc(XIO_DEV_USB, c);			// write to USB port
+				xio_putc(XIO_DEV_UART_USB, c);			// write to USB port
 			}
 		}
 	} else {
 		if ((c = xio_getc(XIO_DEV_RS485)) != _FDEV_ERR) {
 			xio_putc(XIO_DEV_RS485, c);			// write back to master
-			xio_putc(XIO_DEV_USB, c);			// write to slave USB
+			xio_putc(XIO_DEV_UART_USB, c);			// write to slave USB
 		}
 	}
 	_delay_ms(2);

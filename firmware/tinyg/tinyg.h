@@ -57,9 +57,9 @@
  */
 #define MAGICNUM 0x12EF			// used for memory integrity assertions
 
-#define STD_IN 	XIO_DEV_USB		// default IO settings
-#define STD_OUT	XIO_DEV_USB
-#define STD_ERR	XIO_DEV_USB
+#define STD_IN 	XIO_DEV_UART_USB		// default IO settings
+#define STD_OUT	XIO_DEV_UART_USB
+#define STD_ERR	XIO_DEV_UART_USB
 
 #define AXES 	6				// number of axes supported in this version
 #define MOTORS	4				// number of motors on the board

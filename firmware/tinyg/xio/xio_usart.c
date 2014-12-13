@@ -384,7 +384,7 @@ int xio_putc_usart(const char c, FILE *stream)
  *	Also has wrappers for USB and RS485
  */
 //void xio_queue_RX_char_usb(const char c) { xio_queue_RX_char_usart(XIO_DEV_USB, c); }
-void xio_queue_RX_string_usb(const char *buf) { xio_queue_RX_string_usart(XIO_DEV_USB, buf); }
+void xio_queue_RX_string_usb(const char *buf) { xio_queue_RX_string_usart(XIO_DEV_UART_USB, buf); }
 //void xio_queue_RX_char_rs485(const char c) { xio_queue_RX_char_usart(XIO_DEV_RS485, c); }
 //void xio_queue_RX_string_rs485(const char *buf) { xio_queue_RX_string_usart(XIO_DEV_RS485, buf); }
 
