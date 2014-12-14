@@ -151,6 +151,7 @@ static void _controller_HSM()
 	DISPATCH(_sync_internal_usb());
 	DISPATCH(cfg_baud_rate_callback());		// perform baud rate update (must be after TX sync)
 	DISPATCH(_dispatch());					// read and execute next command
+
 }
 
 /***************************************************************************** 
@@ -169,6 +170,7 @@ static stat_t _dispatch()
 	// read input line or return if not a completed line
 	// xio_gets() is a non-blocking workalike of fgets()
 	while (true) {
+
 		if ((status = xio_gets(tg.primary_src, tg.in_buf, sizeof(tg.in_buf))) == STAT_OK) {
 			tg.bufp = tg.in_buf;
 			break;

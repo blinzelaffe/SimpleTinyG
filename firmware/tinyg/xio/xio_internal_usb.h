@@ -61,7 +61,6 @@ typedef struct xioUSB {
 	volatile buffer_t tx_buf_head;			// TX buffer write index
 	volatile buffer_t tx_buf_count;
 
-	USART_t *usart;							// xmega USART structure
 	PORT_t	*port;							// corresponding port
 
 	volatile char rx_buf[RX_BUFFER_SIZE];	// (written by ISR)

@@ -147,19 +147,20 @@ static int _gets_usb_helper(xioDev_t *d, xioUSB_t *dx)
 {
 	char c = NUL;
 
-	if (dx->rx_buf_head == dx->rx_buf_tail) {	// RX ISR buffer empty
-		dx->rx_buf_count = 0;					// reset count for good measure
+	if (uis.rx_buf_head == uis.rx_buf_tail) {	// RX ISR buffer empty
+		uis.rx_buf_count = 0;					// reset count for good measure
 		return(XIO_BUFFER_EMPTY);				// stop reading
 	}
+	
 	advance_buffer(dx->rx_buf_tail, RX_BUFFER_SIZE);
 	dx->rx_buf_count--;
 	d->x_flow(d);								// run flow control
-	d->x_putc(c, stdout);		// conditional echo regardless of character
 
 	//	c = dx->rx_buf[dx->rx_buf_tail];			// get char from RX Q
 	c = (dx->rx_buf[dx->rx_buf_tail] & 0x007F);	// get char from RX Q & mask MSB
 	//if (d->flag_echo) d->x_putc(c, stdout);		// conditional echo regardless of character
-	d->x_putc(c, stdout);		// conditional echo regardless of character
+	if (d->flag_echo) 
+		d->x_putc(c, stdout);		// conditional echo regardless of character
 
 	if (d->len >= d->size) {					// handle buffer overruns
 		d->buf[d->size] = NUL;					// terminate line (d->size is zero based)
@@ -204,10 +205,14 @@ int xio_gets_internal_usb(xioDev_t *d, char *buf, const int size)
 	}
 	while (true) {
 		switch (_gets_usb_helper(d,dx)) {
-			case (XIO_BUFFER_EMPTY): return (XIO_EAGAIN); // empty condition
-			case (XIO_BUFFER_FULL): return (XIO_BUFFER_FULL);// overrun err
-			case (XIO_EOL): return (XIO_OK);			  // got complete line
-			case (XIO_EAGAIN): break;					  // loop for next character
+			case (XIO_BUFFER_EMPTY): 
+				return (XIO_EAGAIN); // empty condition
+			case (XIO_BUFFER_FULL): 
+				return (XIO_BUFFER_FULL);// overrun err
+			case (XIO_EOL): 
+				return (XIO_OK);			  // got complete line
+			case (XIO_EAGAIN): 
+				break;					  // loop for next character
 		}
 	}
 	return (XIO_OK);
@@ -277,8 +282,50 @@ int xio_getc_internal_usb(FILE *stream)
  */
 int xio_putc_internal_usb(const char c, FILE *stream)
 {
-	//CDC_Device_SendByte(&VirtualSerial_CDC_Interface,(uint8_t)c);	
+	CDC_Device_SendByte(&VirtualSerial_CDC_Interface,(uint8_t)c);	
 	return (XIO_OK);
+}
+
+void xio_handle_received_internal_usb_byte(char c)
+{
+	if (tg.network_mode == NETWORK_MASTER) {	// forward character if you are a master
+		net_forward(c);
+	}
+	// trap async commands - do not insert character into RX queue
+	if (c == CHAR_RESET) {	 					// trap Kill signal
+		tg_request_reset();
+		return;
+	}
+	if (c == CHAR_FEEDHOLD) {					// trap feedhold signal
+		cm_request_feedhold();
+		return;
+	}
+	if (c == CHAR_QUEUE_FLUSH) {				// trap queue flush signal
+		cm_request_queue_flush();
+		return;
+	}
+	if (c == CHAR_CYCLE_START) {				// trap cycle start signal
+		cm_request_cycle_start();
+		return;
+	}
+
+	// filter out CRs and LFs if they are to be ignored
+	if ((c == CR) && (uis.flag_ignorecr)) return;
+	if ((c == LF) && (uis.flag_ignorelf)) return;
+
+	// normal character path
+	advance_buffer(uis.rx_buf_head, RX_BUFFER_SIZE);
+	if (uis.rx_buf_head != uis.rx_buf_tail) {	// buffer is not full
+		uis.rx_buf[uis.rx_buf_head] = c;		// write char unless full
+		//CDC_Device_SendByte(&VirtualSerial_CDC_Interface,(uint8_t)c);	
+		uis.rx_buf_count++;
+	} else {		
+		// buffer-full - toss the incoming character
+		if ((++uis.rx_buf_head) > RX_BUFFER_SIZE-1) {	// reset the head
+			uis.rx_buf_count = RX_BUFFER_SIZE-1;		// reset count for good measure
+			uis.rx_buf_head = 1;
+		}
+	}
 }
 
 int xio_sync_internal_usb()
@@ -291,7 +338,8 @@ int xio_sync_internal_usb()
 		received_byte = CDC_Device_ReceiveByte(&VirtualSerial_CDC_Interface);
 		if(received_byte > 0)
 		{			
-			CDC_Device_SendByte(&VirtualSerial_CDC_Interface,(uint8_t)received_byte);	
+			//CDC_Device_SendByte(&VirtualSerial_CDC_Interface,(uint8_t)received_byte);	
+			xio_handle_received_internal_usb_byte((char)received_byte);
 		}
 	}
 	CDC_Device_USBTask(&VirtualSerial_CDC_Interface);
