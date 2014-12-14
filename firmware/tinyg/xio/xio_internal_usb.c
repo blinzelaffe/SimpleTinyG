@@ -37,10 +37,14 @@
 #include "xio.h"						// includes for all devices are in here
 #include "../xmega/xmega_interrupts.h"
 
+// application specific stuff that's littered into the USB handler
 #include "../tinyg.h"					// needed for AXES definition
 #include "../gpio.h"					// needed for XON/XOFF LED indicator
 #include "../util.h"					// needed to pick up __debug defines
 #include "../config.h"					// needed to write back usb baud rate
+#include "../network.h"
+#include "../controller.h"
+#include "../canonical_machine.h"		// trapped characters communicate directly with the canonical machine
 
 
 /** LUFA CDC Class driver configuration 
@@ -127,9 +131,49 @@ FILE *xio_open_internal_usb(const uint8_t dev, const char *addr, const flags_t f
 	dx->tx_buf_head = 1;
 	dx->tx_buf_tail = 1;
 
+	Delay_MS(100);
 	USB_Init();
+	Delay_MS(100);
+	xio_sync_internal_usb();
+	Delay_MS(100);
+	xio_sync_internal_usb();
+	Delay_MS(100);
+	
 
 	return (&d->file);		// return FILE reference
+}
+
+static int _gets_usb_helper(xioDev_t *d, xioUSB_t *dx)
+{
+	char c = NUL;
+
+	if (dx->rx_buf_head == dx->rx_buf_tail) {	// RX ISR buffer empty
+		dx->rx_buf_count = 0;					// reset count for good measure
+		return(XIO_BUFFER_EMPTY);				// stop reading
+	}
+	advance_buffer(dx->rx_buf_tail, RX_BUFFER_SIZE);
+	dx->rx_buf_count--;
+	d->x_flow(d);								// run flow control
+	d->x_putc(c, stdout);		// conditional echo regardless of character
+
+	//	c = dx->rx_buf[dx->rx_buf_tail];			// get char from RX Q
+	c = (dx->rx_buf[dx->rx_buf_tail] & 0x007F);	// get char from RX Q & mask MSB
+	//if (d->flag_echo) d->x_putc(c, stdout);		// conditional echo regardless of character
+	d->x_putc(c, stdout);		// conditional echo regardless of character
+
+	if (d->len >= d->size) {					// handle buffer overruns
+		d->buf[d->size] = NUL;					// terminate line (d->size is zero based)
+		d->signal = XIO_SIG_EOL;
+		return (XIO_BUFFER_FULL);
+	}
+	if ((c == CR) || (c == LF)) {				// handle CR, LF termination
+		d->buf[(d->len)++] = NUL;
+		d->signal = XIO_SIG_EOL;
+		d->flag_in_line = false;				// clear in-line state (reset)
+		return (XIO_EOL);						// return for end-of-line
+	}
+	d->buf[(d->len)++] = c;						// write character to buffer
+	return (XIO_EAGAIN);
 }
 
 /* 
@@ -149,6 +193,23 @@ FILE *xio_open_internal_usb(const uint8_t dev, const char *addr, const flags_t f
  */
 int xio_gets_internal_usb(xioDev_t *d, char *buf, const int size)
 {
+	xioUSB_t *dx = &uis;					// USB pointer
+
+	if (d->flag_in_line == false) {				// first time thru initializations
+		d->flag_in_line = true;					// yes, we are busy getting a line
+		d->len = 0;								// zero buffer
+		d->buf = buf;
+		d->size = size;
+		d->signal = XIO_SIG_OK;					// reset signal register
+	}
+	while (true) {
+		switch (_gets_usb_helper(d,dx)) {
+			case (XIO_BUFFER_EMPTY): return (XIO_EAGAIN); // empty condition
+			case (XIO_BUFFER_FULL): return (XIO_BUFFER_FULL);// overrun err
+			case (XIO_EOL): return (XIO_OK);			  // got complete line
+			case (XIO_EAGAIN): break;					  // loop for next character
+		}
+	}
 	return (XIO_OK);
 }
 
@@ -182,7 +243,7 @@ int xio_getc_internal_usb(FILE *stream)
 {
 	// these convenience pointers optimize faster than resolving the references each time
 	xioDev_t *d = (xioDev_t *)stream->udata;
-	xioUsart_t *dx = d->x;
+	xioUSB_t *dx = &uis;
 	char c;
 
 	while (dx->rx_buf_head == dx->rx_buf_tail) {	// RX ISR buffer empty
@@ -216,6 +277,7 @@ int xio_getc_internal_usb(FILE *stream)
  */
 int xio_putc_internal_usb(const char c, FILE *stream)
 {
+	//CDC_Device_SendByte(&VirtualSerial_CDC_Interface,(uint8_t)c);	
 	return (XIO_OK);
 }
 
@@ -228,9 +290,10 @@ int xio_sync_internal_usb()
 	{
 		received_byte = CDC_Device_ReceiveByte(&VirtualSerial_CDC_Interface);
 		if(received_byte > 0)
-			CDC_Device_SendByte(&VirtualSerial_CDC_Interface,(uint8_t)received_byte);
+		{			
+			CDC_Device_SendByte(&VirtualSerial_CDC_Interface,(uint8_t)received_byte);	
+		}
 	}
-	CDC_Device_ReceiveByte(&VirtualSerial_CDC_Interface);
 	CDC_Device_USBTask(&VirtualSerial_CDC_Interface);
 	USB_USBTask();
 

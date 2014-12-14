@@ -34,7 +34,7 @@ int xio_gets_internal_usb(xioDev_t *d, char *buf, const int size);
 int xio_getc_internal_usb(FILE *stream);
 int xio_putc_internal_usb(const char c, FILE *stream);
 int xio_sync_internal_usb();
-
+void xio_init_internal_usb();
 
 // prototypes for LUFA events
 void EVENT_USB_Device_Connect(void);
@@ -66,6 +66,15 @@ typedef struct xioUSB {
 
 	volatile char rx_buf[RX_BUFFER_SIZE];	// (written by ISR)
 	volatile char tx_buf[TX_BUFFER_SIZE];
+	
+	// device configuration flags
+	uint8_t flag_block;
+	uint8_t flag_echo;
+	uint8_t flag_crlf;
+	uint8_t flag_ignorecr;
+	uint8_t flag_ignorelf;
+	uint8_t flag_linemode;
+	
 } xioUSB_t;
 
 
